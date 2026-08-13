@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Driftya.SpriteAtlasForge.Application;
@@ -59,6 +60,56 @@ public sealed class SkiaSpriteDetectorTests
 
         await Assert.That(result.Regions).Count().IsEqualTo(1);
         await Assert.That(result.Regions[0]).IsEqualTo(new PixelRect(0, 0, 7, 4));
+    }
+
+    [Test]
+    public async Task Detection_keeps_a_small_detail_ambiguous_between_two_sprites_separate()
+    {
+        using var directory = new TestDirectory();
+        var path = directory.GetPath("engine-detail.png");
+        WritePng(path, 24, 12, bitmap =>
+        {
+            Fill(bitmap, 2, 2, 6, 7, SKColors.White);
+            Fill(bitmap, 10, 4, 1, 3, SKColors.DeepSkyBlue);
+            Fill(bitmap, 13, 2, 6, 7, SKColors.White);
+        });
+        var detector = new SkiaSpriteDetector();
+
+        var result = await detector.DetectAsync(path, new SpriteDetectionOptions
+        {
+            MinimumArea = 20,
+            MergeDistance = 2,
+            NoiseReductionRadius = 0,
+            BackgroundMode = SpriteBackgroundMode.AlphaOnly,
+        });
+
+        await Assert.That(result.Regions).IsEquivalentTo([
+            new PixelRect(2, 2, 6, 7),
+            new PixelRect(13, 2, 6, 7),
+        ]);
+    }
+
+    [Test]
+    public async Task Detection_attaches_a_small_engine_detail_to_its_only_nearby_sprite()
+    {
+        using var directory = new TestDirectory();
+        var path = directory.GetPath("attached-engine-detail.png");
+        WritePng(path, 16, 12, bitmap =>
+        {
+            Fill(bitmap, 2, 2, 6, 7, SKColors.White);
+            Fill(bitmap, 10, 4, 1, 3, SKColors.DeepSkyBlue);
+        });
+        var detector = new SkiaSpriteDetector();
+
+        var result = await detector.DetectAsync(path, new SpriteDetectionOptions
+        {
+            MinimumArea = 20,
+            MergeDistance = 2,
+            NoiseReductionRadius = 0,
+            BackgroundMode = SpriteBackgroundMode.AlphaOnly,
+        });
+
+        await Assert.That(result.Regions).IsEquivalentTo([new PixelRect(2, 2, 9, 7)]);
     }
 
     [Test]
@@ -137,6 +188,28 @@ public sealed class SkiaSpriteDetectorTests
         var result = await detector.DetectAsync(path, RawPixelOptions());
 
         await Assert.That(result.Regions).IsEquivalentTo([new PixelRect(1, 1, 12, 10)]);
+    }
+
+    [Test]
+    public async Task Detection_does_not_merge_separated_pixels_only_because_their_bounds_overlap()
+    {
+        using var directory = new TestDirectory();
+        var path = directory.GetPath("overlapping-bounds.png");
+        WritePng(path, 12, 12, bitmap =>
+        {
+            Fill(bitmap, 1, 1, 1, 8, SKColors.White);
+            Fill(bitmap, 1, 1, 7, 1, SKColors.White);
+            Fill(bitmap, 8, 4, 1, 7, SKColors.White);
+            Fill(bitmap, 4, 10, 5, 1, SKColors.White);
+        });
+        var detector = new SkiaSpriteDetector();
+
+        var result = await detector.DetectAsync(path, RawPixelOptions());
+
+        await Assert.That(result.Regions).IsEquivalentTo([
+            new PixelRect(1, 1, 7, 8),
+            new PixelRect(4, 4, 5, 7),
+        ]);
     }
 
     [Test]
@@ -232,6 +305,148 @@ public sealed class SkiaSpriteDetectorTests
     }
 
     [Test]
+    public async Task Auto_background_mode_ignores_continuous_alpha_one_to_three_noise()
+    {
+        using var directory = new TestDirectory();
+        var path = directory.GetPath("alpha-one-to-three-noise.png");
+        WritePng(path, 60, 32, bitmap =>
+        {
+            for (var y = 0; y < bitmap.Height; y++)
+            {
+                for (var x = 0; x < bitmap.Width; x++)
+                {
+                    bitmap.SetPixel(x, y, new SKColor(
+                        (byte)((x * 47 + y * 11) % 256),
+                        (byte)((x * 13 + y * 61) % 256),
+                        (byte)((x * 71 + y * 7) % 256),
+                        (byte)(1 + ((x + y) % 3))));
+                }
+            }
+
+            Fill(bitmap, 4, 5, 20, 16, new SKColor(180, 100, 30, 255));
+            Fill(bitmap, 35, 8, 20, 17, new SKColor(30, 110, 190, 255));
+        });
+        var detector = new SkiaSpriteDetector();
+
+        var options = new SpriteDetectionOptions
+        {
+            MinimumArea = 20,
+            MergeDistance = SpriteDetectionOptions.DefaultMergeDistance,
+            NoiseReductionRadius = 0,
+        };
+
+        var result = await detector.DetectAsync(path, options);
+        var overMerged = await detector.DetectAsync(path, options with { MergeDistance = 44 });
+
+        await Assert.That(result.Regions).IsEquivalentTo([
+            new PixelRect(4, 5, 20, 16),
+            new PixelRect(35, 8, 20, 17),
+        ]);
+        await Assert.That(overMerged.Regions).IsEquivalentTo([new PixelRect(4, 5, 51, 20)]);
+    }
+
+    [Test]
+    public async Task Auto_background_mode_removes_semitransparent_shadow_bridges_below_the_foreground_mode()
+    {
+        using var directory = new TestDirectory();
+        var path = directory.GetPath("shadow-bridge.png");
+        WritePng(path, 60, 32, bitmap =>
+        {
+            bitmap.Erase(new SKColor(70, 70, 75, 1));
+            Fill(bitmap, 4, 5, 20, 16, new SKColor(180, 100, 30, 251));
+            Fill(bitmap, 35, 8, 20, 17, new SKColor(30, 110, 190, 251));
+            Fill(bitmap, 24, 12, 11, 3, new SKColor(50, 70, 90, 200));
+        });
+        var detector = new SkiaSpriteDetector();
+
+        var result = await detector.DetectAsync(path, new SpriteDetectionOptions
+        {
+            MinimumArea = 20,
+            MergeDistance = 0,
+            NoiseReductionRadius = 0,
+        });
+
+        await Assert.That(result.Regions).IsEquivalentTo([
+            new PixelRect(4, 5, 20, 16),
+            new PixelRect(35, 8, 20, 17),
+        ]);
+    }
+
+    [Test]
+    public async Task Auto_seeded_wand_recovers_soft_edges_without_merging_connected_markers()
+    {
+        using var directory = new TestDirectory();
+        var path = directory.GetPath("connected-soft-edges.png");
+        WritePng(path, 52, 30, bitmap =>
+        {
+            bitmap.Erase(new SKColor(70, 70, 75, 1));
+            Fill(bitmap, 4, 6, 16, 14, new SKColor(120, 80, 45, 230));
+            Fill(bitmap, 6, 8, 12, 10, new SKColor(180, 100, 30, 251));
+            Fill(bitmap, 30, 7, 16, 14, new SKColor(45, 85, 120, 230));
+            Fill(bitmap, 32, 9, 12, 10, new SKColor(30, 110, 190, 251));
+            Fill(bitmap, 20, 12, 10, 3, new SKColor(70, 75, 80, 230));
+        });
+        var detector = new SkiaSpriteDetector();
+
+        var result = await detector.DetectAsync(path, new SpriteDetectionOptions
+        {
+            MinimumArea = 20,
+            MergeDistance = 0,
+            NoiseReductionRadius = 0,
+        });
+
+        await Assert.That(result.Regions).IsEquivalentTo([
+            new PixelRect(4, 6, 21, 14),
+            new PixelRect(25, 7, 21, 14),
+        ]);
+    }
+
+    [Test]
+    public async Task Auto_background_mode_detects_the_generated_ship_modules_fixture()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "ship-modules-02.png");
+        var detector = new SkiaSpriteDetector();
+        var progress = new List<AtlasProgress>();
+
+        var result = await detector.DetectAsync(
+            path,
+            new SpriteDetectionOptions(),
+            new InlineProgress<AtlasProgress>(progress.Add));
+
+        await Assert.That(result.ImageSize).IsEqualTo(new PixelSize(1536, 1024));
+        await Assert.That(progress[0].Message).IsEqualTo("Ignoring low-alpha background noise through alpha 248.");
+        await Assert.That(result.Regions).Count().IsEqualTo(175);
+        await Assert.That(result.Regions).Contains(new PixelRect(1087, 521, 120, 167));
+        await Assert.That(result.Regions).Contains(new PixelRect(1197, 604, 51, 84));
+        await Assert.That(result.Regions).Contains(new PixelRect(1056, 652, 44, 35));
+        await Assert.That(result.Regions).Contains(new PixelRect(1461, 762, 58, 78));
+        await Assert.That(result.Regions).Contains(new PixelRect(1465, 793, 43, 89));
+    }
+
+    [Test]
+    public async Task Auto_background_mode_preserves_the_semitransparent_ship_module_fixture()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "ship-modules-01.png");
+        var detector = new SkiaSpriteDetector();
+        var progress = new List<AtlasProgress>();
+
+        var result = await detector.DetectAsync(
+            path,
+            new SpriteDetectionOptions(),
+            new InlineProgress<AtlasProgress>(progress.Add));
+
+        await Assert.That(result.ImageSize).IsEqualTo(new PixelSize(1254, 1254));
+        await Assert.That(progress[0].Message).IsEqualTo("Ignoring low-alpha background noise through alpha 243.");
+        await Assert.That(result.Regions).Count().IsEqualTo(109);
+        await Assert.That(result.Regions).Contains(new PixelRect(792, 16, 56, 70));
+        await Assert.That(result.Regions).Contains(new PixelRect(22, 101, 213, 101));
+        await Assert.That(result.Regions).Contains(new PixelRect(20, 1057, 162, 88));
+        await Assert.That(result.Regions).Contains(new PixelRect(170, 1057, 120, 88));
+        await Assert.That(result.Regions).Contains(new PixelRect(1156, 1067, 62, 89));
+        await Assert.That(result.Regions).Contains(new PixelRect(1206, 1082, 13, 55));
+    }
+
+    [Test]
     public async Task Alpha_only_mode_keeps_an_opaque_background_as_foreground_for_explicit_raw_control()
     {
         using var directory = new TestDirectory();
@@ -267,6 +482,11 @@ public sealed class SkiaSpriteDetectorTests
         MergeDistance = 0,
         NoiseReductionRadius = 0,
     };
+
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
+    }
 
     private static void Fill(SKBitmap bitmap, int x, int y, int width, int height, SKColor color)
     {

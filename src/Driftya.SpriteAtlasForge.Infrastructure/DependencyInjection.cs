@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.TryAddSingleton<ISpriteDetector, SkiaSpriteDetector>();
         services.TryAddSingleton<IAtlasPacker, DeterministicShelfAtlasPacker>();
         services.TryAddSingleton<IAtlasImageComposer, SkiaAtlasImageComposer>();
+        services.TryAddSingleton<ISpriteImageExporter, SkiaSpriteImageExporter>();
         services.TryAddSingleton<IAtlasFileSystem, LocalAtlasFileSystem>();
         services.TryAddSingleton<IAtlasForgeService, AtlasForgeService>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IAtlasExporter, NativeAtlasExporter>());

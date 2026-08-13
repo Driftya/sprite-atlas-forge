@@ -1,5 +1,7 @@
 namespace Driftya.SpriteAtlasForge.ClientApplication.Pages;
 
+using Controls;
+
 public partial class MainPage : ContentPage
 {
     public MainPage(WorkspacePageModel model)
@@ -8,30 +10,44 @@ public partial class MainPage : ContentPage
         BindingContext = model;
     }
 
-    private async void OnCanvasTapped(object? sender, TappedEventArgs args)
+    private async void OnOverlayCanvasTapped(object? sender, CanvasTappedEventArgs args)
     {
-        if (BindingContext is not WorkspacePageModel model || args.GetPosition(AtlasCanvas) is not { } point)
+        if (BindingContext is not WorkspacePageModel model)
         {
             return;
         }
 
-        await model.AddConnectorAtCanvasCommand.ExecuteAsync(new CanvasPoint(point.X, point.Y));
-    }
-
-    private async void OnSpriteTapped(object? sender, TappedEventArgs args)
-    {
-        if (BindingContext is not WorkspacePageModel model ||
-            sender is not TapGestureRecognizer { Parent.BindingContext: SpriteCanvasOverlay overlay } ||
-            args.GetPosition(AtlasCanvas) is not { } point)
-        {
-            return;
-        }
-
-        model.SelectSpriteCommand.Execute(overlay.SpriteId);
         if (!string.IsNullOrWhiteSpace(model.NewConnectorName))
         {
-            await model.AddConnectorAtCanvasCommand.ExecuteAsync(new CanvasPoint(point.X, point.Y));
+            await model.AddConnectorAtCanvasCommand.ExecuteAsync(new CanvasPoint(
+                args.X * model.CanvasZoomScale,
+                args.Y * model.CanvasZoomScale));
         }
+    }
+
+    private void OnOverlaySpriteSelected(object? sender, SpriteSelectedEventArgs args)
+    {
+        if (BindingContext is not WorkspacePageModel model)
+        {
+            return;
+        }
+
+        model.SelectSpriteCommand.Execute(args.SpriteId);
+    }
+
+    private async void OnSpriteRegionResized(object? sender, SpriteRegionResizedEventArgs args)
+    {
+        if (BindingContext is not WorkspacePageModel model)
+        {
+            return;
+        }
+
+        await model.ResizeSpriteFromCanvasCommand.ExecuteAsync(new CanvasSpriteResize(
+            args.SpriteId,
+            args.X,
+            args.Y,
+            args.Width,
+            args.Height));
     }
 
     private async void OnConnectorPanUpdated(object? sender, PanUpdatedEventArgs args)

@@ -54,4 +54,25 @@ public sealed class MauiWorkspaceFilePicker : IWorkspaceFilePicker
         cancellationToken.ThrowIfCancellationRequested();
         return result?.Path;
     }
+
+    public async Task<string?> PickPngSavePathAsync(
+        string suggestedName,
+        CancellationToken cancellationToken = default)
+    {
+        var window = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()
+            ?? throw new InvalidOperationException("The application window is not available.");
+        var nativeWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window
+            ?? throw new InvalidOperationException("The Windows application window is not initialized.");
+        var picker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(nativeWindow.AppWindow.Id)
+        {
+            SuggestedFileName = suggestedName,
+            CommitButtonText = "Save sprite PNG",
+            DefaultFileExtension = ".png",
+        };
+        picker.FileTypeChoices.Add("PNG image", [".png"]);
+
+        var result = await picker.PickSaveFileAsync();
+        cancellationToken.ThrowIfCancellationRequested();
+        return result?.Path;
+    }
 }

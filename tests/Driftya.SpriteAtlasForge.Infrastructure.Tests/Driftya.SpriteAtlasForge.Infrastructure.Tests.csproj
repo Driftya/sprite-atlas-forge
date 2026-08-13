@@ -19,5 +19,13 @@
 
   <ItemGroup>
     <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None
+      Include="..\..\docs\examples\ship-modules-01.png"
+      Link="Fixtures\ship-modules-01.png"
+      CopyToOutputDirectory="PreserveNewest" />
+    <None
+      Include="..\..\docs\examples\ship-modules-02.png"
+      Link="Fixtures\ship-modules-02.png"
+      CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

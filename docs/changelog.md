@@ -12,5 +12,16 @@
 - Added generated-art detection cleanup that filters small opaque artifacts, breaks thin noise bridges, and groups disconnected content contained inside a sprite's transparent regions.
 - Added automatic border-connected background removal for fully opaque generated sheets, with shared MAUI and CLI mode/tolerance controls.
 - Improved automatic detection with an alpha-histogram cutoff for multicolored low-alpha watermark noise that connects otherwise separate sprites.
+- Labeled every desktop detection-cleanup input with its meaning and units, warned that large merge distances can combine a whole sheet, and added regression coverage for continuous colored alpha 1-3 noise.
+- Fixed Auto detection for generated sheets whose semi-transparent shadow or watermark matte occupies the middle of the alpha histogram, with `ship-modules-02.png` retained as a real regression fixture.
+- Made high-alpha refinement connectivity-gated and added `ship-modules-01.png` as a paired fixture so Auto preserves semi-transparent module silhouettes instead of keeping only their opaque cores.
+- Combined Auto's alpha components with bounded seeded magic-wand refinement, splitting coarse regions that contain multiple confident cores and restoring each sprite's softer edge pixels without reconnecting neighboring markers.
+- Made marker splitting layout-aware: Auto now requires a low-density vertical gutter and substantial content on both sides, preventing small high-alpha details inside one sprite from becoming standalone regions.
+- Made normal merge distances compare labeled component pixels rather than bounding rectangles, preserving separate diagonal/interlocking sprites while retaining explicit containment grouping.
 - Added undoable MAUI actions to create a manual sprite region and delete the selected sprite.
+- Added direct image selection and eight drag handles for undoable source-region resizing on original (unrepacked) sheets.
+- Replaced per-sprite MAUI border/label controls with one drawn overlay so repeated zoom no longer rebuilds the full sprite visual tree.
+- Preserved small nearby engine/plume fragments by attaching below-minimum components only when exactly one qualifying sprite is nearby, without allowing them to bridge two sprites.
+- Fixed canvas sprite clicks being swallowed by the full-size connector layer while retaining draggable connector controls.
+- Added a right-sidebar action to save the selected displayed sprite frame as a lossless PNG crop.
 - Expanded Application, CLI, and Client regression coverage.

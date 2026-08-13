@@ -10,4 +10,8 @@ public interface IWorkspaceFilePicker
         string suggestedName,
         string nativeProjectExtension,
         CancellationToken cancellationToken = default);
+
+    Task<string?> PickPngSavePathAsync(
+        string suggestedName,
+        CancellationToken cancellationToken = default);
 }

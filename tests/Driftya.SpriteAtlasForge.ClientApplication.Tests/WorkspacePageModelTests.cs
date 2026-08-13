@@ -17,6 +17,7 @@ public sealed class WorkspacePageModelTests
         var model = new WorkspacePageModel(
             AtlasForgeApplicationInfo.Default,
             new StubService(CreateProject()),
+            new StubSpriteImageExporter(),
             new StubFilePicker());
 
         await Assert.That(model.Title).IsEqualTo("Sprite Atlas Forge");
@@ -35,6 +36,25 @@ public sealed class WorkspacePageModelTests
 
         await Assert.That(model.CanvasImageWidth).IsEqualTo(40d);
         await Assert.That(model.CanvasImageHeight).IsEqualTo(40d);
+    }
+
+    [Test]
+    public async Task Repeated_zoom_keeps_sprite_overlay_instances_stable()
+    {
+        var project = CreateProject();
+        var model = CreateLoadedModel(new StubService(project), project);
+        var overlays = model.SpriteOverlays.ToArray();
+
+        for (var zoom = 25; zoom <= 800; zoom += 25)
+        {
+            model.ZoomPercent = zoom;
+        }
+
+        await Assert.That(model.SpriteOverlays).Count().IsEqualTo(overlays.Length);
+        for (var index = 0; index < overlays.Length; index++)
+        {
+            await Assert.That(ReferenceEquals(model.SpriteOverlays[index], overlays[index])).IsTrue();
+        }
     }
 
     [Test]
@@ -78,6 +98,7 @@ public sealed class WorkspacePageModelTests
         var model = new WorkspacePageModel(
             AtlasForgeApplicationInfo.Default,
             service,
+            new StubSpriteImageExporter(),
             new StubFilePicker { PngPath = Path.Combine(root, "source.png") });
 
         var operation = model.OpenImageCommand.ExecuteAsync(null);
@@ -97,7 +118,11 @@ public sealed class WorkspacePageModelTests
         var project = CreateProject();
         var service = new StubService(project);
         var picker = new StubFilePicker { PngPath = imagePath };
-        var model = new WorkspacePageModel(AtlasForgeApplicationInfo.Default, service, picker);
+        var model = new WorkspacePageModel(
+            AtlasForgeApplicationInfo.Default,
+            service,
+            new StubSpriteImageExporter(),
+            picker);
 
         await model.OpenImageCommand.ExecuteAsync(null);
 
@@ -123,7 +148,11 @@ public sealed class WorkspacePageModelTests
         var projectPath = Path.Combine(root, "project.saf.json");
         var service = new StubService(CreateProject());
         var picker = new StubFilePicker { ProjectPath = projectPath };
-        var model = new WorkspacePageModel(AtlasForgeApplicationInfo.Default, service, picker);
+        var model = new WorkspacePageModel(
+            AtlasForgeApplicationInfo.Default,
+            service,
+            new StubSpriteImageExporter(),
+            picker);
 
         await model.OpenProjectCommand.ExecuteAsync(null);
         await model.SaveCommand.ExecuteAsync(null);
@@ -206,6 +235,53 @@ public sealed class WorkspacePageModelTests
     }
 
     [Test]
+    public async Task Canvas_resize_updates_the_selected_sprite_and_undo_history()
+    {
+        var project = CreateProject();
+        var model = CreateLoadedModel(new StubService(project), project);
+
+        await model.ResizeSpriteFromCanvasCommand.ExecuteAsync(
+            new CanvasSpriteResize("module", 1, 2, 12, 10));
+
+        await Assert.That(model.SelectedSprite!.SourceRegion).IsEqualTo(new PixelRect(1, 2, 12, 10));
+        await Assert.That(model.SourceRegionX).IsEqualTo(1);
+        await Assert.That(model.SourceRegionWidth).IsEqualTo(12);
+        await Assert.That(model.SpriteOverlays[0].X).IsEqualTo(1d);
+        await Assert.That(model.Status).IsEqualTo("Sprite region resized.");
+        await Assert.That(model.CanUndo).IsTrue();
+    }
+
+    [Test]
+    public async Task Save_selected_sprite_uses_the_displayed_frame_and_png_destination()
+    {
+        var project = CreateProject();
+        var service = new StubService(project);
+        var exporter = new StubSpriteImageExporter();
+        var destination = Path.Combine(Path.GetTempPath(), "module.png");
+        var picker = new StubFilePicker { PngSavePath = destination };
+        var model = new WorkspacePageModel(
+            AtlasForgeApplicationInfo.Default,
+            service,
+            exporter,
+            picker)
+        {
+            CurrentProject = project,
+            CurrentImagePath = "source.png",
+            ProjectPath = "project.saf.json",
+            SelectedSprite = project.Sprites[0],
+        };
+        model.Sprites.Add(project.Sprites[0]);
+
+        await model.SaveSelectedSpriteImageCommand.ExecuteAsync(null);
+
+        await Assert.That(picker.LastPngSuggestedName).IsEqualTo("module");
+        await Assert.That(exporter.SourcePath).IsEqualTo("source.png");
+        await Assert.That(exporter.DestinationPath).IsEqualTo(destination);
+        await Assert.That(exporter.Region).IsEqualTo(project.Sprites[0].Frame);
+        await Assert.That(model.Status).Contains("module.png");
+    }
+
+    [Test]
     public async Task Add_and_delete_sprite_commands_update_selection_overlays_and_undo_history()
     {
         var project = CreateProject();
@@ -260,7 +336,11 @@ public sealed class WorkspacePageModelTests
         service.ResultProject = model.CurrentProject!;
 
         var picker = new StubFilePicker { SavePath = destination };
-        var saveAsModel = new WorkspacePageModel(AtlasForgeApplicationInfo.Default, service, picker)
+        var saveAsModel = new WorkspacePageModel(
+            AtlasForgeApplicationInfo.Default,
+            service,
+            new StubSpriteImageExporter(),
+            picker)
         {
             CurrentProject = model.CurrentProject,
             ProjectPath = source,
@@ -286,6 +366,7 @@ public sealed class WorkspacePageModelTests
         var model = new WorkspacePageModel(
             AtlasForgeApplicationInfo.Default,
             service,
+            new StubSpriteImageExporter(),
             new StubFilePicker { ProjectPath = "replacement.saf.json" },
             new StubInteraction(false))
         {
@@ -303,7 +384,11 @@ public sealed class WorkspacePageModelTests
 
     private static WorkspacePageModel CreateLoadedModel(StubService service, AtlasProject project)
     {
-        var model = new WorkspacePageModel(AtlasForgeApplicationInfo.Default, service, new StubFilePicker())
+        var model = new WorkspacePageModel(
+            AtlasForgeApplicationInfo.Default,
+            service,
+            new StubSpriteImageExporter(),
+            new StubFilePicker())
         {
             CurrentProject = project,
             ProjectPath = "project.saf.json",
@@ -465,6 +550,8 @@ public sealed class WorkspacePageModelTests
         public string? PngPath { get; init; }
         public string? ProjectPath { get; init; }
         public string? SavePath { get; init; }
+        public string? PngSavePath { get; init; }
+        public string? LastPngSuggestedName { get; private set; }
 
         public Task<string?> PickPngAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(PngPath);
@@ -477,6 +564,33 @@ public sealed class WorkspacePageModelTests
             string suggestedName,
             string nativeProjectExtension,
             CancellationToken cancellationToken = default) => Task.FromResult(SavePath);
+
+        public Task<string?> PickPngSavePathAsync(
+            string suggestedName,
+            CancellationToken cancellationToken = default)
+        {
+            LastPngSuggestedName = suggestedName;
+            return Task.FromResult(PngSavePath);
+        }
+    }
+
+    private sealed class StubSpriteImageExporter : ISpriteImageExporter
+    {
+        public string? SourcePath { get; private set; }
+        public string? DestinationPath { get; private set; }
+        public PixelRect? Region { get; private set; }
+
+        public Task ExportAsync(
+            string sourceImagePath,
+            string destinationPath,
+            PixelRect region,
+            CancellationToken cancellationToken = default)
+        {
+            SourcePath = sourceImagePath;
+            DestinationPath = destinationPath;
+            Region = region;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class StubInteraction(bool discard) : IWorkspaceInteraction

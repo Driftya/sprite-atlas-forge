@@ -11,13 +11,14 @@ public sealed record CanvasPoint(double X, double Y);
 
 public sealed record CanvasConnectorMove(string Name, double X, double Y);
 
+public sealed record CanvasSpriteResize(string SpriteId, int X, int Y, int Width, int Height);
+
 public sealed record SpriteCanvasOverlay(
     string SpriteId,
     double X,
     double Y,
     double Width,
-    double Height,
-    bool IsSelected);
+    double Height);
 
 public sealed record ConnectorCanvasOverlay(
     string Name,
@@ -28,6 +29,7 @@ public sealed record ConnectorCanvasOverlay(
 public partial class WorkspacePageModel : ObservableObject
 {
     private readonly IAtlasForgeService _atlasForgeService;
+    private readonly ISpriteImageExporter _spriteImageExporter;
     private readonly IWorkspaceFilePicker _filePicker;
     private readonly IWorkspaceInteraction _interaction;
     private readonly Stack<EditorSnapshot> _undoHistory = [];
@@ -37,10 +39,12 @@ public partial class WorkspacePageModel : ObservableObject
     public WorkspacePageModel(
         AtlasForgeApplicationInfo applicationInfo,
         IAtlasForgeService atlasForgeService,
+        ISpriteImageExporter spriteImageExporter,
         IWorkspaceFilePicker filePicker,
         IWorkspaceInteraction? interaction = null)
     {
         _atlasForgeService = atlasForgeService;
+        _spriteImageExporter = spriteImageExporter;
         _filePicker = filePicker;
         _interaction = interaction ?? AlwaysDiscardWorkspaceInteraction.Instance;
         Title = applicationInfo.Name;
@@ -81,6 +85,16 @@ public partial class WorkspacePageModel : ObservableObject
 
     public double CanvasImageHeight => (CurrentProject?.Atlas.Size.Height ?? 0) * ZoomPercent / 100d;
 
+    public double CanvasZoomScale => ZoomPercent / 100d;
+
+    public double SourceImageWidth => CurrentProject?.Atlas.Size.Width ?? 0;
+
+    public double SourceImageHeight => CurrentProject?.Atlas.Size.Height ?? 0;
+
+    public bool CanResizeSelectedSprite => CurrentProject is { Atlas.Repacked: false } && SelectedSprite is not null;
+
+    public bool HasSelectedSprite => SelectedSprite is not null;
+
     [ObservableProperty]
     public partial string Status { get; set; } = "Open a PNG or native atlas project to begin.";
 
@@ -88,9 +102,14 @@ public partial class WorkspacePageModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasProject))]
     [NotifyPropertyChangedFor(nameof(CanvasImageWidth))]
     [NotifyPropertyChangedFor(nameof(CanvasImageHeight))]
+    [NotifyPropertyChangedFor(nameof(SourceImageWidth))]
+    [NotifyPropertyChangedFor(nameof(SourceImageHeight))]
+    [NotifyPropertyChangedFor(nameof(CanResizeSelectedSprite))]
     public partial AtlasProject? CurrentProject { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanResizeSelectedSprite))]
+    [NotifyPropertyChangedFor(nameof(HasSelectedSprite))]
     public partial AtlasSprite? SelectedSprite { get; set; }
 
     [ObservableProperty]
@@ -106,6 +125,7 @@ public partial class WorkspacePageModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanvasImageWidth))]
     [NotifyPropertyChangedFor(nameof(CanvasImageHeight))]
+    [NotifyPropertyChangedFor(nameof(CanvasZoomScale))]
     public partial double ZoomPercent { get; set; } = 100;
 
     [ObservableProperty]
@@ -181,7 +201,7 @@ public partial class WorkspacePageModel : ObservableObject
 
     partial void OnCurrentProjectChanged(AtlasProject? value) => RefreshCanvasOverlays();
 
-    partial void OnZoomPercentChanged(double value) => RefreshCanvasOverlays();
+    partial void OnZoomPercentChanged(double value) => RefreshConnectorOverlays();
 
     partial void OnSelectedSpriteChanged(AtlasSprite? value)
     {
@@ -414,6 +434,59 @@ public partial class WorkspacePageModel : ObservableObject
             null,
             "Sprite region updated.",
             cancellationToken);
+    }
+
+    [RelayCommand]
+    private Task ResizeSpriteFromCanvasAsync(CanvasSpriteResize resize, CancellationToken cancellationToken)
+    {
+        if (CurrentProject is null || CurrentProject.Atlas.Repacked)
+        {
+            return Task.CompletedTask;
+        }
+
+        var sprite = CurrentProject.Sprites.FirstOrDefault(candidate => string.Equals(
+            candidate.Id,
+            resize.SpriteId,
+            StringComparison.OrdinalIgnoreCase));
+        if (sprite is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var region = new PixelRect(resize.X, resize.Y, resize.Width, resize.Height);
+        return ApplyEditAsync(
+            () => AtlasProjectEditor.UpdateSpriteRegion(CurrentProject, sprite.Id, region),
+            sprite.Id,
+            null,
+            "Sprite region resized.",
+            cancellationToken);
+    }
+
+    [RelayCommand]
+    private async Task SaveSelectedSpriteImageAsync(CancellationToken cancellationToken)
+    {
+        if (CurrentProject is null || SelectedSprite is null || string.IsNullOrWhiteSpace(CurrentImagePath))
+        {
+            return;
+        }
+
+        var destination = await _filePicker.PickPngSavePathAsync(
+            SanitizeFileName(SelectedSprite.Id),
+            cancellationToken);
+        if (destination is null)
+        {
+            return;
+        }
+
+        await RunBusyAsync(async token =>
+        {
+            await _spriteImageExporter.ExportAsync(
+                CurrentImagePath,
+                destination,
+                SelectedSprite.Frame,
+                token);
+            Status = $"Saved sprite '{SelectedSprite.Id}' to {Path.GetFileName(destination)}.";
+        }, cancellationToken);
     }
 
     [RelayCommand]
@@ -702,29 +775,35 @@ public partial class WorkspacePageModel : ObservableObject
     private void RefreshCanvasOverlays()
     {
         SpriteOverlays.Clear();
-        ConnectorOverlays.Clear();
         if (CurrentProject is null)
         {
+            ConnectorOverlays.Clear();
             return;
         }
 
-        var scale = ZoomPercent / 100d;
         foreach (var sprite in CurrentProject.Sprites)
         {
             SpriteOverlays.Add(new SpriteCanvasOverlay(
                 sprite.Id,
-                sprite.Frame.X * scale,
-                sprite.Frame.Y * scale,
-                sprite.Frame.Width * scale,
-                sprite.Frame.Height * scale,
-                string.Equals(sprite.Id, SelectedSprite?.Id, StringComparison.OrdinalIgnoreCase)));
+                sprite.Frame.X,
+                sprite.Frame.Y,
+                sprite.Frame.Width,
+                sprite.Frame.Height));
         }
+
+        RefreshConnectorOverlays();
+    }
+
+    private void RefreshConnectorOverlays()
+    {
+        ConnectorOverlays.Clear();
 
         if (SelectedSprite is null)
         {
             return;
         }
 
+        var scale = ZoomPercent / 100d;
         foreach (var connector in SelectedSprite.Connectors)
         {
             ConnectorOverlays.Add(new ConnectorCanvasOverlay(
@@ -755,6 +834,16 @@ public partial class WorkspacePageModel : ObservableObject
         Status = progress.Message;
         OnPropertyChanged(nameof(HasProgress));
     });
+
+    private static string SanitizeFileName(string spriteId)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var sanitized = new string(spriteId
+            .Select(character => invalid.Contains(character) ? '_' : character)
+            .ToArray())
+            .Trim();
+        return string.IsNullOrWhiteSpace(sanitized) ? "sprite" : sanitized;
+    }
 
     private SpriteDetectionOptions CreateDetectionOptions()
     {

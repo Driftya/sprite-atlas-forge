@@ -233,7 +233,7 @@ Expose focused use cases behind an Application facade rather than exposing Infra
 - [x] Load native v1 projects and report unsupported versions explicitly; add migrations when a second format version exists.
 - [x] Save a native project atomically.
 - [x] Detect sprite regions with explicit detection options.
-- [ ] Add, update, remove, merge, and split sprite regions.
+- [ ] Add, update, remove, merge, and split sprite regions. Add/update/remove are implemented, including direct canvas selection and eight-handle resizing; merge and split remain.
 - [x] Rename a sprite with duplicate-ID validation.
 - [x] Add, move, rename, and remove connectors through shared Application use cases.
 - [x] Validate a complete project and return structured diagnostics.
@@ -291,7 +291,8 @@ CLI requirements:
 - [x] Remove SQLite-backed task/project/category/tag template behavior unless a specific atlas requirement justifies persistence beyond `.saf.json` files.
 - [x] Provide Open Image, Open Project, Save, Save As, Detect, Repack, Validate, and Export actions.
 - [ ] Support Windows file picker and drag/drop for PNG and `.saf.json` files.
-- [x] Show a central canvas with zoom, pan, selection, sprite bounds, labels, and connectors. The canvas supports 25–800% zoom and two-axis panning.
+- [x] Show a central canvas with zoom, pan, direct selection, eight-handle region resizing, sprite bounds, labels, and connectors. The canvas supports 25–800% zoom and two-axis panning; bounds share one lightweight drawing surface so zoom does not rebuild per-sprite controls.
+- [x] Save the selected displayed sprite frame as an individual PNG through the desktop Save dialog.
 - [ ] Show a sprite list with search, ID, warning state, and visibility toggle. Selection and IDs are implemented; search, warning, and visibility controls remain.
 - [ ] Show a property panel for region, connector list, tags, and custom properties. Regions and connectors are implemented; tags and custom-property editing remain.
 - [ ] Show structured validation errors that navigate to the affected sprite or field.
