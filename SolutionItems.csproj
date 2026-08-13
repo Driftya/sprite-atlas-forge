@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>false</IsTestProject>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+		<EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+		<EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="**/*.md" />
+		<None Include="**/*.txt" />
+		<None Include="**/*.json" />
+		<None Include="**/*.yml" />
+		<None Include="**/*.yaml" />
+		<None Include="**/.env" />
+		<None Include="**/*.env" />
+		<None Include="**/*.png" />
+		<None Include="**/*.svg" />
+		<None Include="**/*.drawio" />
+
+		<None Remove="src\**" />
+		<None Remove="obj\**" />
+		<None Remove="bin\**" />
+		<None Remove=".vs\**" />
+		<None Remove="docker-compose.yml" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Driftya.SpriteAtlasForge.Application/Driftya.SpriteAtlasForge.Application.csproj" Id="547f1848-9f64-440b-8f67-354808783053" />
+    <Project Path="src/Driftya.SpriteAtlasForge.CliApplication/Driftya.SpriteAtlasForge.CliApplication.csproj" />
+    <Project Path="src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj" Id="d18f1c15-8563-4aac-a716-afe340f0f950" />
+    <Project Path="src/Driftya.SpriteAtlasForge.Domain/Driftya.SpriteAtlasForge.Domain.csproj" Id="8765d3e9-5998-4836-8362-e6c20dc36033" />
+    <Project Path="src/Driftya.SpriteAtlasForge.Infrastructure/Driftya.SpriteAtlasForge.Infrastructure.csproj" Id="b40b30e0-d9a3-45b2-a364-31e41d1a6536" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Driftya.SpriteAtlasForge.Application.Tests/Driftya.SpriteAtlasForge.Application.Tests.csproj" />
+  </Folder>
+  <Project Path="SolutionItems.csproj" Id="90af0fc3-983c-4c0a-8d63-d8c25da54b13" />
+</Solution>

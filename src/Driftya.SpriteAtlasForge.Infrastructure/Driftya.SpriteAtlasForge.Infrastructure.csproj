@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Driftya.SpriteAtlasForge.Application\Driftya.SpriteAtlasForge.Application.csproj" />
+    <ProjectReference Include="..\Driftya.SpriteAtlasForge.Domain\Driftya.SpriteAtlasForge.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
