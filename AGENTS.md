@@ -30,14 +30,16 @@ When changing behavior or UI flows:
 
 ## Test Discipline
 
-When making code changes, run tests for both backend and frontend before finishing:
+When making code changes, run the focused tests and both production hosts before finishing:
 
-- Backend tests (minimum):
-  - `dotnet test tests/Driftya.Mothership.Domain.Tests/Driftya.Mothership.Domain.Tests.csproj --nologo /p:UseSharedCompilation=false`
-- Frontend tests (minimum):
-  - `cd src/web && npm run test`
+- Application tests:
+  - `dotnet run --project tests/Driftya.SpriteAtlasForge.Application.Tests/Driftya.SpriteAtlasForge.Application.Tests.csproj --no-restore`
+- CLI build:
+  - `dotnet build src/Driftya.SpriteAtlasForge.CliApplication/Driftya.SpriteAtlasForge.CliApplication.csproj --nologo`
+- Windows MAUI build:
+  - `dotnet build src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj -f net10.0-windows10.0.19041.0 --nologo`
 
-If your change touches additional backend projects with tests, run those relevant test projects too.
+If your change touches additional projects with tests, run those relevant test projects too.
 If any test cannot be run, clearly state that and why in your final update.
 
 

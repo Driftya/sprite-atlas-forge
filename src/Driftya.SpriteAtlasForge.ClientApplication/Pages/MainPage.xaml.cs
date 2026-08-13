@@ -1,14 +1,10 @@
-﻿using Driftya.SpriteAtlasForge.ClientApplication.Models;
-using Driftya.SpriteAtlasForge.ClientApplication.PageModels;
+namespace Driftya.SpriteAtlasForge.ClientApplication.Pages;
 
-namespace Driftya.SpriteAtlasForge.ClientApplication.Pages
+public partial class MainPage : ContentPage
 {
-    public partial class MainPage : ContentPage
+    public MainPage(WorkspacePageModel model)
     {
-        public MainPage(MainPageModel model)
-        {
-            InitializeComponent();
-            BindingContext = model;
-        }
+        InitializeComponent();
+        BindingContext = model;
     }
 }

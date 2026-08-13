@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Float within the approved major version; major upgrades stay manual. -->
+    <PackageVersion Include="CommunityToolkit.Maui" Version="15.*" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.*" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.*" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.*" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.*" />
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.*" />
+    <PackageVersion Include="System.CommandLine" Version="2.*" />
+    <PackageVersion Include="TUnit" Version="1.*" />
+  </ItemGroup>
+</Project>

@@ -12,4 +12,9 @@
     <ProjectReference Include="..\Driftya.SpriteAtlasForge.Infrastructure\Driftya.SpriteAtlasForge.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
 </Project>

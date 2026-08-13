@@ -11,15 +11,17 @@ This repository follows pragmatic engineering rules designed to keep delivery fa
 
 ## Platform Standards
 
-- Backend targets `.NET 10`.
-- Frontend uses `React` + `TypeScript` + `Vite`.
+- All projects target `.NET 10`.
+- The desktop client uses `.NET MAUI` and supports Windows in v1.
+- The CLI and MAUI client share Application/Infrastructure services in-process.
 - Runtime architecture boundaries should stay aligned with Onion layering:
   - `Domain` pure rules
   - `Application` use-cases/orchestration
   - `Infrastructure` external systems
-  - `Web` transport and composition
+  - `CliApplication` command-line transport and composition
+  - `ClientApplication` MAUI presentation and desktop composition
 
-## Backend Guidelines (.NET 10)
+## .NET Guidelines
 
 - Prefer async I/O end-to-end.
 - Keep endpoint handlers thin; move logic into application services.
@@ -27,14 +29,22 @@ This repository follows pragmatic engineering rules designed to keep delivery fa
 - Keep domain rules deterministic and unit-testable.
 - Use DI for dependencies; avoid hidden static state.
 
-## Frontend Guidelines (React)
+## Desktop Guidelines (.NET MAUI)
 
 - Prefer composition over inheritance.
-- Keep components focused and presentational when possible.
+- Keep pages and controls focused and presentational when possible.
 - Keep state local first; lift only when shared.
-- Derive computed values with memoization only when needed.
-- Use semantic HTML and ARIA where interaction needs it.
+- Keep editor state in view models or Application session models rather than code-behind.
+- Use semantic properties and keyboard alternatives for interactive canvas operations.
 - Keep styling changes localized and avoid layout regressions.
+
+## NuGet Guidelines
+
+- Centralize package versions in `Directory.Packages.props`.
+- Float within an approved major version (`10.*`, `8.*`, `2.*`) so minor and patch updates are automatic on restore.
+- Keep major upgrades manual and review release notes, licensing, migration impact, and golden-output changes.
+- Prefer stable packages; prerelease dependencies require a documented blocker and removal plan.
+- Run NuGet audit and the full verification suite after dependency changes.
 
 ## Pattern Guidance (Refactoring.Guru-aligned)
 
@@ -89,3 +99,13 @@ When behavior changes:
 - Prefer small commits with focused intent.
 - Include test/build evidence in PR notes.
 - Call out risks, migrations, and follow-up tasks explicitly.
+
+## Required verification
+
+Run the focused tests and both production-host builds before finishing a code change:
+
+```powershell
+dotnet run --project tests/Driftya.SpriteAtlasForge.Application.Tests/Driftya.SpriteAtlasForge.Application.Tests.csproj --no-restore
+dotnet build src/Driftya.SpriteAtlasForge.CliApplication/Driftya.SpriteAtlasForge.CliApplication.csproj --nologo
+dotnet build src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj -f net10.0-windows10.0.19041.0 --nologo
+```
