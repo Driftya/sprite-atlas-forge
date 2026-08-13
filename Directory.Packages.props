@@ -12,6 +12,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.*" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.*" />
     <PackageVersion Include="Microsoft.Maui.Controls" Version="10.*" />
+    <PackageVersion Include="SkiaSharp" Version="4.*" />
     <PackageVersion Include="System.CommandLine" Version="2.*" />
     <PackageVersion Include="TUnit" Version="1.*" />
   </ItemGroup>

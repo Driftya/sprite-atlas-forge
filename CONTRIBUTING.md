@@ -102,10 +102,10 @@ When behavior changes:
 
 ## Required verification
 
-Run the focused tests and both production-host builds before finishing a code change:
+Build all production projects, run the five focused test projects, collect Cobertura reports, and enforce per-project line-coverage thresholds before finishing a code change:
 
 ```powershell
-dotnet run --project tests/Driftya.SpriteAtlasForge.Application.Tests/Driftya.SpriteAtlasForge.Application.Tests.csproj --no-restore
-dotnet build src/Driftya.SpriteAtlasForge.CliApplication/Driftya.SpriteAtlasForge.CliApplication.csproj --nologo
-dotnet build src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj -f net10.0-windows10.0.19041.0 --nologo
+.\eng\verify.ps1
 ```
+
+The script writes ignored Cobertura artifacts under `.artifacts/coverage/`. TUnit supplies the Microsoft Testing Platform coverage extension transitively; do not add Coverlet packages to these projects.

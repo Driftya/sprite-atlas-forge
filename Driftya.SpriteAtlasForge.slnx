@@ -8,6 +8,10 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Driftya.SpriteAtlasForge.Application.Tests/Driftya.SpriteAtlasForge.Application.Tests.csproj" />
+    <Project Path="tests/Driftya.SpriteAtlasForge.CliApplication.Tests/Driftya.SpriteAtlasForge.CliApplication.Tests.csproj" />
+    <Project Path="tests/Driftya.SpriteAtlasForge.ClientApplication.Tests/Driftya.SpriteAtlasForge.ClientApplication.Tests.csproj" />
+    <Project Path="tests/Driftya.SpriteAtlasForge.Domain.Tests/Driftya.SpriteAtlasForge.Domain.Tests.csproj" />
+    <Project Path="tests/Driftya.SpriteAtlasForge.Infrastructure.Tests/Driftya.SpriteAtlasForge.Infrastructure.Tests.csproj" />
   </Folder>
   <Project Path="SolutionItems.csproj" Id="90af0fc3-983c-4c0a-8d63-d8c25da54b13" />
 </Solution>

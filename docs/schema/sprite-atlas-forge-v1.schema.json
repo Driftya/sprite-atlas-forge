@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:driftya:sprite-atlas-forge:schema:v1",
+  "title": "Sprite Atlas Forge project",
+  "type": "object",
+  "required": ["formatVersion", "name", "source", "atlas", "sprites"],
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "source": { "$ref": "#/$defs/source" },
+    "atlas": { "$ref": "#/$defs/atlas" },
+    "sprites": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sprite" }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "positiveSize": {
+      "type": "object",
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "source": {
+      "allOf": [
+        { "$ref": "#/$defs/positiveSize" },
+        {
+          "type": "object",
+          "required": ["image", "sha256"],
+          "properties": {
+            "image": { "type": "string", "minLength": 1 },
+            "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+          }
+        }
+      ]
+    },
+    "atlas": {
+      "allOf": [
+        { "$ref": "#/$defs/positiveSize" },
+        {
+          "type": "object",
+          "required": ["image", "repacked"],
+          "properties": {
+            "image": { "type": "string", "minLength": 1 },
+            "repacked": { "type": "boolean" },
+            "packing": { "$ref": "#/$defs/packing" }
+          }
+        }
+      ]
+    },
+    "packing": {
+      "type": "object",
+      "required": ["algorithm", "padding", "powerOfTwo", "maximumWidth", "maximumHeight"],
+      "properties": {
+        "algorithm": { "type": "string", "minLength": 1 },
+        "padding": { "type": "integer", "minimum": 0 },
+        "powerOfTwo": { "type": "boolean" },
+        "maximumWidth": { "type": "integer", "minimum": 1 },
+        "maximumHeight": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "rect": {
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "connector": {
+      "type": "object",
+      "required": ["name", "x", "y"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "sprite": {
+      "type": "object",
+      "required": ["id", "sourceRegion", "frame", "connectors", "tags", "properties"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "sourceRegion": { "$ref": "#/$defs/rect" },
+        "frame": { "$ref": "#/$defs/rect" },
+        "connectors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/connector" }
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["null", "string", "number", "boolean"]
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

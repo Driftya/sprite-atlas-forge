@@ -4,7 +4,7 @@ using Driftya.SpriteAtlasForge.Application;
 using Driftya.SpriteAtlasForge.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Driftya.SpriteAtlasForge.Application.Tests;
+namespace Driftya.SpriteAtlasForge.Infrastructure.Tests;
 
 public sealed class DependencyInjectionTests
 {
@@ -17,9 +17,11 @@ public sealed class DependencyInjectionTests
 
         using var serviceProvider = services.BuildServiceProvider();
         var applicationInfo = serviceProvider.GetRequiredService<AtlasForgeApplicationInfo>();
+        var atlasForgeService = serviceProvider.GetRequiredService<IAtlasForgeService>();
 
         await Assert.That(applicationInfo).IsEqualTo(AtlasForgeApplicationInfo.Default);
         await Assert.That(applicationInfo.NativeProjectExtension).IsEqualTo(".saf.json");
+        await Assert.That(atlasForgeService).IsNotNull();
     }
 
     [Test]

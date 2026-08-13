@@ -1,6 +1,6 @@
 # Reverse Texture Packer Implementation Plan
 
-Status: In progress — Phase 0 complete  
+Status: In progress — Phases 0–2 complete; Phases 3–5 partially implemented
 Last updated: 2026-08-13  
 Target: Windows desktop first; macOS may be added later
 
@@ -20,19 +20,19 @@ The checked-in solution structure is the architectural starting point. `docs/ide
 
 ## 2. Confirmed scope and decisions
 
-- [ ] Treat `Driftya.SpriteAtlasForge.slnx` as the source of truth for projects.
-- [ ] Use the five existing production projects; do not add another production project without a demonstrated boundary that the existing solution cannot represent.
-- [ ] Treat `ClientApplication` as a .NET MAUI desktop application.
-- [ ] Support Windows in v1.
-- [ ] Keep platform-neutral Domain, Application, and Infrastructure contracts so Mac Catalyst can be evaluated later.
-- [ ] Do not support Android or iOS in v1.
-- [ ] Make the CLI a thin public host over reusable Application use cases.
-- [ ] Make the MAUI client call those same Application use cases in-process.
-- [ ] Do not make `ClientApplication` reference or launch `CliApplication` during normal operation.
-- [ ] Preserve the imported spritesheet by default; repacking is an explicit operation.
-- [ ] Stabilize the native format before implementing consumer-specific exporters.
-- [ ] Model sprite connection points as a named `connectors` array, not fixed `anchor` and `next` properties.
-- [ ] Keep v1 a sprite extraction and metadata-authoring tool, not a general image editor.
+- [x] Treat `Driftya.SpriteAtlasForge.slnx` as the source of truth for projects.
+- [x] Use the five existing production projects; do not add another production project without a demonstrated boundary that the existing solution cannot represent.
+- [x] Treat `ClientApplication` as a .NET MAUI desktop application.
+- [x] Support Windows in v1.
+- [x] Keep platform-neutral Domain, Application, and Infrastructure contracts so Mac Catalyst can be evaluated later.
+- [x] Do not support Android or iOS in v1.
+- [x] Make the CLI a thin public host over reusable Application use cases.
+- [x] Make the MAUI client call those same Application use cases in-process.
+- [x] Do not make `ClientApplication` reference or launch `CliApplication` during normal operation.
+- [x] Preserve the imported spritesheet by default; repacking is an explicit operation.
+- [x] Stabilize the native format before implementing consumer-specific exporters.
+- [x] Model sprite connection points as a named `connectors` array, not fixed `anchor` and `next` properties.
+- [x] Keep v1 a sprite extraction and metadata-authoring tool, not a general image editor.
 
 ### Why the desktop client should not call the CLI executable
 
@@ -67,15 +67,19 @@ If process isolation becomes a real requirement later, add a process adapter beh
 | `Driftya.SpriteAtlasForge.Infrastructure` | Image decoding/encoding, filesystem access, native JSON persistence, detection implementation, packing implementation, and exporters | Application and Domain |
 | `Driftya.SpriteAtlasForge.CliApplication` | Command parsing, DI composition, console output, exit codes, and automation contract | Application and Infrastructure |
 | `Driftya.SpriteAtlasForge.ClientApplication` | Windows-first MAUI UI, editor interaction, view models, canvas, dialogs, and desktop composition root | Application and Infrastructure |
-| `Driftya.SpriteAtlasForge.Application.Tests` | Initial automated test home for Domain/Application behavior and shared fixtures | Application; add narrowly justified references when integration coverage requires them |
+| `Driftya.SpriteAtlasForge.Domain.Tests` | Domain invariants and value-object coverage | Domain |
+| `Driftya.SpriteAtlasForge.Application.Tests` | Application orchestration and port-contract coverage | Application |
+| `Driftya.SpriteAtlasForge.Infrastructure.Tests` | Persistence, image processing, packing, exporting, and DI integration coverage | Infrastructure |
+| `Driftya.SpriteAtlasForge.CliApplication.Tests` | Command parsing and CLI workflow coverage | CLI and Infrastructure for end-to-end fixtures |
+| `Driftya.SpriteAtlasForge.ClientApplication.Tests` | Platform-neutral workspace view-model behavior coverage | Application plus linked production view-model source; do not bootstrap WinUI in unit tests |
 
 Dependency rules:
 
-- [ ] Domain must not reference MAUI, image libraries, JSON serializers, filesystems, or CLI packages.
-- [ ] Application must not reference MAUI or concrete image libraries.
-- [ ] Infrastructure must not contain UI or command-line behavior.
-- [ ] CLI and MAUI must contain no sprite-detection, packing, serialization, or exporter business logic.
-- [ ] Share DI registration from Infrastructure so both hosts resolve the same implementations and options.
+- [x] Domain must not reference MAUI, image libraries, JSON serializers, filesystems, or CLI packages.
+- [x] Application must not reference MAUI or concrete image libraries.
+- [x] Infrastructure must not contain UI or command-line behavior.
+- [x] CLI and MAUI must contain no sprite-detection, packing, serialization, or exporter business logic.
+- [x] Share DI registration from Infrastructure so both hosts resolve the same implementations and options.
 
 ## 3.1 Library-first implementation policy
 
@@ -112,7 +116,7 @@ GitHub stars are a useful adoption signal, not a quality guarantee. The star and
 | Composition and configuration | `Microsoft.Extensions.DependencyInjection`, `Microsoft.Extensions.Options`, and `Microsoft.Extensions.Configuration` | Use the standard .NET abstractions shared by CLI and MAUI. Prefer the framework-provided versions aligned with .NET 10. | Microsoft-maintained .NET extensions used throughout the ecosystem. |
 | Logging abstraction | `Microsoft.Extensions.Logging` | Use in Application-facing contracts and services so hosts choose their sinks without coupling core logic. | Standard Microsoft logging abstraction already supported by MAUI/.NET hosts. |
 | Application input validation | [FluentValidation](https://github.com/FluentValidation/FluentValidation) | Use for non-trivial command/project/use-case request validation and structured failures. Keep essential Domain invariants inside Domain types. Do not add it for a handful of trivial null/range checks. | .NET Foundation, Apache-2.0, about 9.8k GitHub stars, established and actively maintained. |
-| Unit tests | [TUnit](https://github.com/thomhurst/TUnit) | Retain the test framework already selected by the boilerplate. Use its native assertions and lifecycle features before adding assertion/mocking packages. | Existing solution dependency with active development and .NET 10 support; verify IDE, coverage, and CI behavior during Phase 0. |
+| Unit tests | [TUnit](https://github.com/thomhurst/TUnit) | Retain the test framework already selected by the boilerplate. Use its native assertions, Microsoft Testing Platform runner, and built-in coverage extension before adding assertion/mocking/reporting packages. | Existing solution dependency with active development and .NET 10 support; all five test hosts and Cobertura collection verified on 2026-08-13. |
 
 ### Conditional libraries requiring a spike
 
@@ -210,33 +214,33 @@ The core format must stay game-agnostic. Fields such as `position`, `weight`, or
 
 ### 4.3 Coordinate rules
 
-- [ ] Use integer pixel coordinates.
-- [ ] Define `(0, 0)` as the top-left of the relevant image or sprite.
-- [ ] Store `sourceRegion` relative to the imported source image.
-- [ ] Store `frame` relative to the emitted atlas image.
-- [ ] Store every connector relative to the sprite's logical, untrimmed local bounds.
-- [ ] Keep connector coordinates stable when the sprite is moved during repacking.
+- [x] Use integer pixel coordinates.
+- [x] Define `(0, 0)` as the top-left of the relevant image or sprite.
+- [x] Store `sourceRegion` relative to the imported source image.
+- [x] Store `frame` relative to the emitted atlas image.
+- [x] Store every connector relative to the sprite's logical, untrimmed local bounds.
+- [x] Keep connector coordinates stable when the sprite is moved during repacking.
 - [ ] Record trim offsets and original size before enabling transparent-edge trimming, so connectors and runtime placement remain correct.
-- [ ] Permit connector positions on the sprite boundary; reject points outside the logical bounds unless a future format version explicitly supports external points.
-- [ ] Require connector names to be non-empty and unique within a sprite using an ordinal, case-insensitive comparison.
-- [ ] Preserve connector array order for predictable editing and diffs; never use order as connector identity.
+- [x] Permit connector positions on the sprite boundary; reject points outside the logical bounds unless a future format version explicitly supports external points.
+- [x] Require connector names to be non-empty and unique within a sprite using an ordinal, case-insensitive comparison.
+- [x] Preserve connector array order for predictable editing and diffs; never use order as connector identity.
 
 ## 5. Public application surface
 
 Expose focused use cases behind an Application facade rather than exposing Infrastructure types directly.
 
-- [ ] Create a project from an imported image.
-- [ ] Load and migrate a native project.
-- [ ] Save a native project atomically.
-- [ ] Detect sprite regions with explicit detection options.
+- [x] Create a project from an imported image.
+- [x] Load native v1 projects and report unsupported versions explicitly; add migrations when a second format version exists.
+- [x] Save a native project atomically.
+- [x] Detect sprite regions with explicit detection options.
 - [ ] Add, update, remove, merge, and split sprite regions.
-- [ ] Rename a sprite with duplicate-ID validation.
-- [ ] Add, move, rename, and remove connectors.
-- [ ] Validate a complete project and return structured diagnostics.
-- [ ] Repack sprites with explicit packing options.
-- [ ] Export through a named exporter.
-- [ ] Report progress for long detection, packing, and export operations.
-- [ ] Accept `CancellationToken` for every operation that performs I/O or potentially long-running image work.
+- [x] Rename a sprite with duplicate-ID validation.
+- [x] Add, move, rename, and remove connectors through shared Application use cases.
+- [x] Validate a complete project and return structured diagnostics.
+- [x] Repack sprites with explicit packing options.
+- [x] Export through a named exporter.
+- [x] Report progress for long detection, packing, and export operations.
+- [x] Accept `CancellationToken` for every operation that performs I/O or potentially long-running image work.
 
 Suggested boundary types:
 
@@ -259,6 +263,7 @@ Proposed command surface:
 atlasforge detect <image> --output <project.saf.json> [detection options]
 atlasforge validate <project.saf.json> [--json]
 atlasforge connector add <project> --sprite <id> --name <name> --x <x> --y <y>
+atlasforge connector update <project> --sprite <id> --current-name <name> --name <new-name> --x <x> --y <y>
 atlasforge connector remove <project> --sprite <id> --name <name>
 atlasforge repack <project> --output <directory> [packing options]
 atlasforge export <project> --format <native|phaser-json-hash> --output <directory>
@@ -266,54 +271,54 @@ atlasforge export <project> --format <native|phaser-json-hash> --output <directo
 
 CLI requirements:
 
-- [ ] Keep command handlers thin and delegate immediately to Application use cases.
+- [x] Keep command handlers thin and delegate immediately to Application use cases.
 - [ ] Provide `--help` and examples for every command.
-- [ ] Support `--json` for machine-readable results and diagnostics.
-- [ ] Write normal results to stdout and errors/diagnostics to stderr.
+- [x] Support `--json` for machine-readable results and diagnostics.
+- [x] Write normal results to stdout and errors/diagnostics to stderr.
 - [ ] Use stable documented exit codes for success, invalid arguments, invalid project data, I/O failure, cancellation, and processing failure.
 - [ ] Never emit interactive prompts when `--json` or a non-interactive flag is active.
-- [ ] Avoid partial output through staging and atomic moves.
-- [ ] Resolve relative paths against a documented working directory.
-- [ ] Make the same input, options, and tool version produce deterministic descriptor output.
-- [ ] Add cancellation handling for Ctrl+C.
-- [ ] Use stable `System.CommandLine` 2.x and keep all parser types inside the CLI host.
+- [x] Avoid partial output through staging and atomic moves.
+- [x] Resolve relative paths against the process working directory.
+- [x] Make the same input, options, and tool version produce deterministic descriptor output.
+- [x] Add cancellation handling through `System.CommandLine` action cancellation tokens.
+- [x] Use stable `System.CommandLine` 2.x and keep all parser types inside the CLI host.
 
 ## 7. MAUI desktop experience
 
 ### 7.1 V1 workspace
 
-- [ ] Replace the current project/task dashboard template with an atlas workspace.
-- [ ] Remove SQLite-backed task/project/category/tag template behavior unless a specific atlas requirement justifies persistence beyond `.saf.json` files.
-- [ ] Provide Open Image, Open Project, Save, Save As, Detect, Repack, Validate, and Export actions.
+- [x] Replace the current project/task dashboard template with an atlas workspace.
+- [x] Remove SQLite-backed task/project/category/tag template behavior unless a specific atlas requirement justifies persistence beyond `.saf.json` files.
+- [ ] Provide Open Image, Open Project, Save, Save As, Detect, Repack, Validate, and Export actions. Open, save, detect, repack, validate, and Phaser export are implemented; Save As remains.
 - [ ] Support Windows file picker and drag/drop for PNG and `.saf.json` files.
-- [ ] Show a central canvas with zoom, pan, selection, sprite bounds, labels, and connectors.
-- [ ] Show a sprite list with search, ID, warning state, and visibility toggle.
-- [ ] Show a property panel for region, connector list, tags, and custom properties.
+- [ ] Show a central canvas with zoom, pan, selection, sprite bounds, labels, and connectors. Size-aware 25–800% zoom and two-axis panning are implemented; interactive overlays remain.
+- [ ] Show a sprite list with search, ID, warning state, and visibility toggle. Selection and IDs are implemented; search, warning, and visibility controls remain.
+- [ ] Show a property panel for region, connector list, tags, and custom properties. Regions and connectors are implemented; tags and custom-property editing remain.
 - [ ] Show structured validation errors that navigate to the affected sprite or field.
 - [ ] Show progress and allow cancellation for detection, repacking, and export.
 - [ ] Track dirty state and confirm before discarding unsaved edits.
 - [ ] Add undo/redo for metadata and region edits before enabling complex manual editing.
-- [ ] Keep all editor state in view models/application session models, not code-behind.
+- [x] Keep all editor state in view models/application session models, not code-behind.
 
 ### 7.2 Connector editor
 
 - [ ] Let the user enter connector-placement mode for the selected sprite.
-- [ ] Add a connector by clicking the sprite and assigning a unique name.
+- [ ] Add a connector by clicking the sprite and assigning a unique name. Unique named numeric entry is implemented; canvas click placement remains.
 - [ ] Render each connector as a clear dot with a label and selected state.
-- [ ] Move a connector by drag or exact numeric X/Y input.
-- [ ] Rename and delete a connector.
-- [ ] Snap to integer pixels by default.
-- [ ] Clamp or reject invalid coordinates consistently with Domain validation.
-- [ ] Keep keyboard navigation and a numeric-input alternative for accessibility.
+- [ ] Move a connector by drag or exact numeric X/Y input. Exact numeric movement is implemented; canvas drag remains.
+- [x] Rename and delete a selected connector through MAUI, CLI, and the shared Application operation.
+- [x] Snap to integer pixels by default through integer connector coordinates and numeric inputs.
+- [x] Clamp or reject invalid coordinates consistently with Domain validation. Coordinates outside logical sprite bounds are rejected.
+- [x] Keep keyboard navigation and a numeric-input alternative for accessibility.
 - [ ] Ensure zoom and pan transforms do not change saved sprite-local coordinates.
-- [ ] Save and reload connectors without coordinate drift.
+- [x] Save and reload connectors without coordinate drift.
 
 ### 7.3 Platform targeting
 
 - [ ] Change the client target frameworks to Windows-only for v1.
 - [ ] Remove Android and iOS startup/resources after verifying that nothing product-specific depends on them.
 - [ ] Decide whether to keep dormant Mac Catalyst files or restore them from version control when macOS work begins.
-- [ ] Keep platform-specific file pickers, drag/drop, shell integration, and packaging behind ClientApplication services.
+- [x] Keep platform-specific file pickers, drag/drop, shell integration, and packaging inside ClientApplication.
 - [ ] Verify Windows high-DPI scaling, large images, keyboard use, and dark/light themes.
 
 No `docs/concept/` assets currently exist in the repository. If concept images are added before UI implementation, review them before changing the workspace layout as required by repository guidance.
@@ -322,47 +327,47 @@ No `docs/concept/` assets currently exist in the repository. If concept images a
 
 ### Detection
 
-- [ ] Accept PNG input in v1; return a clear unsupported-format diagnostic for other files.
-- [ ] Decode the image through Infrastructure.
-- [ ] Build a visible-pixel mask using a configurable alpha threshold.
-- [ ] Detect connected components deterministically.
-- [ ] Calculate a bounding rectangle for each component.
-- [ ] Ignore components below a configurable minimum area.
-- [ ] Support a configurable merge distance for disconnected pieces that belong to one logical sprite.
-- [ ] Apply optional source padding while clamping to image bounds.
-- [ ] Sort detected results deterministically, initially top-to-bottom then left-to-right.
-- [ ] Surface detection options in both CLI and MAUI with identical defaults.
+- [x] Accept PNG input in v1; return a clear unsupported-format diagnostic for other files.
+- [x] Decode the image through Infrastructure using SkiaSharp.
+- [x] Build a visible-pixel mask using a configurable alpha threshold.
+- [x] Detect connected components deterministically.
+- [x] Calculate a bounding rectangle for each component.
+- [x] Ignore components below a configurable minimum area.
+- [x] Support a configurable merge distance for disconnected pieces that belong to one logical sprite.
+- [x] Apply optional source padding while clamping to image bounds.
+- [x] Sort detected results deterministically, initially top-to-bottom then left-to-right.
+- [x] Surface shared detection defaults through Application; CLI exposes overrides and MAUI uses the same defaults.
 - [ ] Preserve manual names/connectors when re-detection can match a previous region confidently; otherwise report an explicit conflict instead of silently losing metadata.
 
 ### Original-sheet mode
 
-- [ ] Make original-sheet mode the default.
-- [ ] Reuse the imported PNG as the emitted atlas when no pixel transformation is requested.
-- [ ] Set each sprite `frame` equal to its detected `sourceRegion`.
-- [ ] Generate native metadata without altering image pixels.
+- [x] Make original-sheet mode the default.
+- [x] Reuse the imported PNG as the emitted atlas when no pixel transformation is requested.
+- [x] Set each sprite `frame` equal to its detected `sourceRegion`.
+- [x] Generate native metadata without altering image pixels.
 
 ### Repack mode
 
-- [ ] Make repacking opt-in.
-- [ ] Define padding, maximum dimensions, power-of-two behavior, rotation policy, and deterministic ordering as explicit options.
-- [ ] Disable sprite rotation in v1 unless the native connector transform and all exporters support it correctly.
-- [ ] Produce a new atlas image and update `frame` while preserving `sourceRegion`.
+- [x] Make repacking opt-in.
+- [x] Define padding, maximum dimensions, power-of-two behavior, rotation policy, and deterministic ordering as explicit options.
+- [x] Disable sprite rotation in v1 unless the native connector transform and all exporters support it correctly.
+- [x] Produce a new atlas image and update `frame` while preserving `sourceRegion`.
 - [ ] Add transparent-edge trimming only after original-size and trim-offset semantics are covered by tests.
-- [ ] Evaluate a maintained packing library against a small deterministic in-house implementation before selecting a dependency.
-- [ ] Record the selected algorithm and options in output metadata for reproducibility.
+- [x] Evaluate current packing libraries; none met the combined maintenance/adoption/constraint gates, so isolate the tested `deterministic-shelf-v1` fallback behind `IAtlasPacker`.
+- [x] Record the selected algorithm and options in output metadata for reproducibility.
 
 ## 9. Export model
 
-- [ ] Treat the native descriptor as the canonical model; never edit an exporter-specific model in the UI.
-- [ ] Discover exporters by a stable format identifier.
-- [ ] Validate exporter capabilities before writing files.
-- [ ] Return a manifest of generated files and diagnostics.
-- [ ] Keep exporters deterministic and cover them with golden files.
-- [ ] Implement native output first.
-- [ ] Implement Phaser JSON Hash as the first consumer exporter after native v1 is stable.
-- [ ] Map frame, source-size, trim, and atlas metadata explicitly in the Phaser adapter.
-- [ ] Decide and document whether connectors are emitted as ignorable custom Phaser metadata or as a separate companion file.
-- [ ] Never discard native-only metadata silently; report unsupported fields when an exporter cannot represent them.
+- [x] Treat the native descriptor as the canonical model; never edit an exporter-specific model in the UI.
+- [x] Discover exporters by a stable format identifier.
+- [x] Validate exporter selection before writing files.
+- [x] Return a manifest of generated files and diagnostics.
+- [x] Keep exporters deterministic and cover their mapping with focused golden assertions.
+- [x] Implement native output first.
+- [x] Implement Phaser JSON Hash as the first consumer exporter after native v1 is stable.
+- [x] Map frame, source-size, trim, and atlas metadata explicitly in the Phaser adapter.
+- [x] Emit connectors, tags, and properties as documented ignorable custom per-frame Phaser metadata.
+- [x] Never discard native-only metadata silently; report the custom-field policy in export diagnostics.
 
 ## 10. Delivery phases
 
@@ -386,42 +391,42 @@ Exit criteria:
 
 ### Phase 1 — Domain model and native format
 
-- [ ] Implement rectangle, size, sprite ID, connector, sprite, source image, atlas output, and atlas project types.
-- [ ] Implement invariants and structured validation diagnostics.
-- [ ] Implement the v1 native serializer and atomic project store.
-- [ ] Define unknown-field and version-migration behavior.
-- [ ] Add representative `.saf.json` golden fixtures.
-- [ ] Add round-trip, invalid-document, duplicate-ID, invalid-region, and invalid-connector tests.
+- [x] Implement rectangle, size, sprite ID, connector, sprite, source image, atlas output, and atlas project types.
+- [x] Implement invariants and structured validation diagnostics.
+- [x] Implement the v1 native serializer and atomic project store.
+- [x] Define unknown-field and version-migration behavior.
+- [x] Add representative `.saf.json` golden fixtures.
+- [x] Add round-trip, invalid-document, duplicate-ID, invalid-region, and invalid-connector tests.
 
 Exit criteria:
 
-- [ ] A project containing multiple named connectors can round-trip without data loss.
-- [ ] Invalid coordinates and unsupported versions produce actionable diagnostics.
+- [x] A project containing multiple named connectors can round-trip without data loss.
+- [x] Invalid coordinates and unsupported versions produce actionable diagnostics.
 
 ### Phase 2 — Detection vertical slice
 
-- [ ] Implement the image workspace abstraction with SkiaSharp-backed Infrastructure and ClientApplication adapters.
-- [ ] Spike OpenCvSharp connected-component detection against representative images and published Windows builds.
-- [ ] If the spike passes the dependency gates, implement detection with OpenCvSharp thresholding/morphology/connected-component operations; otherwise record the failed gates before implementing the bounded fallback algorithm.
-- [ ] Normalize library output into deterministic Domain/Application region ordering.
-- [ ] Implement import/detect/save Application use cases.
-- [ ] Expose detection through the CLI.
-- [ ] Add tiny image fixtures for transparency, touching pixels, disconnected pieces, noise, padding, and image-edge cases.
+- [x] Implement narrow image-processing ports with SkiaSharp-backed Infrastructure and ClientApplication adapters.
+- [x] Review OpenCvSharp against the alpha-mask scope and Windows native deployment cost; reject it for v1 because the required bounded four-neighbor operation does not justify a second native image stack.
+- [x] Record the decision and implement the bounded deterministic connected-component fallback behind `ISpriteDetector`.
+- [x] Normalize detector output into deterministic Domain/Application region ordering.
+- [x] Implement import/detect/save Application use cases.
+- [x] Expose detection through the CLI.
+- [x] Add tiny generated image fixtures for transparency, disconnected pieces, noise, padding, and image-edge clamping.
 
 Exit criteria:
 
-- [ ] One CLI command converts a PNG spritesheet into a valid native descriptor without changing the source PNG.
-- [ ] Repeated runs produce equivalent ordered regions and deterministic JSON.
+- [x] One CLI command converts a PNG spritesheet into a valid native descriptor without changing the source PNG.
+- [x] Repeated runs produce equivalent ordered regions and deterministic JSON.
 
 ### Phase 3 — Windows editor and connector authoring
 
-- [ ] Build the Windows workspace shell and load/save flow.
-- [ ] Build the zoomable/pannable sprite canvas.
+- [x] Build the Windows workspace shell and load/save flow.
+- [x] Build the zoomable/pannable sprite viewport with atlas-size-aware dimensions.
 - [ ] Add detection review and basic region correction.
-- [ ] Add sprite naming and duplicate detection.
-- [ ] Add connector create, move, rename, delete, and numeric editing.
+- [x] Add sprite naming and duplicate detection.
+- [ ] Add connector create, move, rename, delete, and numeric editing. Exact numeric create/move/rename/delete is complete; canvas placement and drag remain.
 - [ ] Add dirty-state, validation, undo/redo, progress, and cancellation behavior.
-- [ ] Verify that MAUI and CLI use the same defaults and Application operations.
+- [x] Verify that MAUI and CLI use the same defaults and Application operations.
 
 Exit criteria:
 
@@ -430,31 +435,31 @@ Exit criteria:
 
 ### Phase 4 — Repacking
 
-- [ ] Finalize deterministic packing behavior and dependency choice.
-- [ ] Implement global padding and atlas-size constraints.
-- [ ] Compose and encode the new atlas image.
-- [ ] Update frames without changing logical connector coordinates.
+- [x] Finalize deterministic packing behavior and dependency choice.
+- [x] Implement global padding and atlas-size constraints.
+- [x] Compose and encode the new atlas image.
+- [x] Update frames without changing logical connector coordinates.
 - [ ] Add trim metadata and trimming only after the untrimmed path is stable.
-- [ ] Expose identical repack options in CLI and MAUI.
-- [ ] Add packing golden fixtures and boundary/failure tests.
+- [ ] Expose identical repack options in CLI and MAUI. CLI options and MAUI defaults are implemented; MAUI option controls remain.
+- [x] Add deterministic packing golden assertions and boundary/failure tests.
 
 Exit criteria:
 
-- [ ] Repacking never overlaps frames or writes outside atlas bounds.
-- [ ] Connector positions remain logically correct after moving and trimming sprites.
+- [x] Repacking never overlaps frames or writes outside atlas bounds for the implemented untrimmed path.
+- [ ] Connector positions remain logically correct after moving and trimming sprites. Moving is covered; trimming is intentionally deferred.
 
 ### Phase 5 — Phaser export
 
-- [ ] Finalize the Phaser JSON Hash mapping.
-- [ ] Implement the exporter strategy and output manifest.
-- [ ] Add CLI and MAUI format selection.
-- [ ] Add golden Phaser descriptors and a small consumer smoke fixture.
-- [ ] Document unsupported or companion metadata behavior.
+- [x] Finalize the Phaser JSON Hash mapping for untrimmed, non-rotated v1 sprites.
+- [x] Implement the exporter strategy and output manifest.
+- [ ] Add CLI and MAUI format selection. CLI selection and a MAUI Phaser action exist; a general MAUI format selector remains.
+- [x] Add deterministic Phaser mapping assertions; a real Phaser consumer smoke fixture remains before declaring the phase complete.
+- [x] Document unsupported and custom metadata behavior.
 
 Exit criteria:
 
 - [ ] A generated Phaser atlas loads with correct frame and trim data.
-- [ ] Native connector metadata remains available according to the documented export policy.
+- [x] Native connector metadata remains available according to the documented export policy.
 
 ### Phase 6 — Windows release hardening
 
@@ -476,16 +481,16 @@ Exit criteria:
 
 ### Automated tests
 
-- [ ] Domain invariants for rectangles, sprite IDs, connector names, connector bounds, and duplicate IDs.
-- [ ] Native format round-trip and version compatibility tests.
-- [ ] Golden JSON tests with deterministic ordering.
-- [ ] Detection tests using small checked-in PNG fixtures.
+- [x] Domain invariants for rectangles, sprite IDs, connector names, connector bounds, and duplicate IDs.
+- [x] Native format round-trip and version compatibility tests.
+- [x] Golden JSON tests with deterministic ordering.
+- [x] Detection tests using small generated PNG fixtures.
 - [ ] Re-detection metadata-preservation tests.
-- [ ] Packing overlap, bounds, padding, determinism, and failure tests.
-- [ ] Exporter golden-file tests.
-- [ ] Application use-case tests with fake image/filesystem ports where appropriate.
-- [ ] CLI integration tests for arguments, exit codes, stdout/stderr, JSON mode, cancellation, and partial-output cleanup.
-- [ ] View-model tests for selection, dirty state, undo/redo, validation, and connector edits.
+- [x] Packing overlap, bounds, padding, determinism, and failure tests for the untrimmed path.
+- [x] Exporter deterministic mapping tests.
+- [x] Application vertical-slice tests using isolated temporary files and real adapters.
+- [ ] CLI integration tests for arguments, exit codes, stdout/stderr, JSON mode, cancellation, and partial-output cleanup. Deterministic detect-command integration is covered; the remaining error/cancellation matrix is not.
+- [ ] View-model tests for selection, dirty state, undo/redo, validation, and connector edits. Workspace load/save/validation, selection, connector edits, cancellation, repack, and export are covered; dirty state and undo/redo remain.
 
 ### Manual Windows checks
 
@@ -497,17 +502,25 @@ Exit criteria:
 - [ ] Verify keyboard-only editing and visible focus.
 - [ ] Verify dark and light themes.
 
-### Commands to establish during Phase 0
+### Verification command
 
-The current repository instructions mention test projects that are not present in this solution. Replace them with commands based on the actual `.slnx`, including at minimum:
+Run the full solution build, all five focused test projects, Cobertura collection, and per-project line-coverage gates with:
 
 ```powershell
-dotnet run --project tests/Driftya.SpriteAtlasForge.Application.Tests/Driftya.SpriteAtlasForge.Application.Tests.csproj --no-restore
-dotnet build src/Driftya.SpriteAtlasForge.CliApplication/Driftya.SpriteAtlasForge.CliApplication.csproj --nologo
-dotnet build src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj -f net10.0-windows10.0.19041.0 --nologo
+.\eng\verify.ps1
 ```
 
-If the single test project becomes an unclear home for Infrastructure, CLI, or UI tests, propose separate test projects as a focused solution change. Do not add them preemptively.
+The thresholds intentionally differ by boundary: Domain 80%, Application 75%, Infrastructure 80%, CLI 70%, and the linked production Client view-model source 80%. Reports are ignored build artifacts under `.artifacts/coverage/`. Raise gates as uncovered error paths receive focused tests; do not lower them to make a change pass.
+
+Latest verified results (2026-08-13):
+
+| Production boundary | Tests | Line coverage | Branch coverage | Line gate |
+| --- | ---: | ---: | ---: | ---: |
+| Domain | 15 | 86.6% | 86.2% | 80% |
+| Application | 6 | 79.7% | 56.2% | 75% |
+| Infrastructure | 14 | 87.2% | 70.0% | 80% |
+| CLI | 10 | 98.1% | 100.0% | 70% |
+| Client workspace view model | 9 | 88.4% | 51.8% | 80% |
 
 ## 12. Cross-cutting completion checklist
 

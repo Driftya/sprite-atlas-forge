@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "name": "modules",
+  "source": {
+    "image": "source/modules.png",
+    "width": 128,
+    "height": 64,
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "atlas": {
+    "image": "source/modules.png",
+    "width": 128,
+    "height": 64,
+    "repacked": false,
+    "packing": null
+  },
+  "sprites": [
+    {
+      "id": "habitat_03",
+      "sourceRegion": {
+        "x": 12,
+        "y": 8,
+        "width": 32,
+        "height": 16
+      },
+      "frame": {
+        "x": 12,
+        "y": 8,
+        "width": 32,
+        "height": 16
+      },
+      "connectors": [
+        {
+          "name": "anchor",
+          "x": 0,
+          "y": 8
+        },
+        {
+          "name": "next",
+          "x": 31,
+          "y": 8
+        }
+      ],
+      "tags": [
+        "habitat",
+        "population"
+      ],
+      "properties": {
+        "position": "Middle",
+        "weight": 1.25
+      }
+    }
+  ]
+}

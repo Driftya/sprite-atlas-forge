@@ -14,6 +14,14 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingleton(AtlasForgeApplicationInfo.Default);
+        services.TryAddSingleton<IAtlasProjectStore, NativeAtlasProjectStore>();
+        services.TryAddSingleton<ISpriteDetector, SkiaSpriteDetector>();
+        services.TryAddSingleton<IAtlasPacker, DeterministicShelfAtlasPacker>();
+        services.TryAddSingleton<IAtlasImageComposer, SkiaAtlasImageComposer>();
+        services.TryAddSingleton<IAtlasFileSystem, LocalAtlasFileSystem>();
+        services.TryAddSingleton<IAtlasForgeService, AtlasForgeService>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IAtlasExporter, NativeAtlasExporter>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IAtlasExporter, PhaserJsonHashExporter>());
 
         return services;
     }

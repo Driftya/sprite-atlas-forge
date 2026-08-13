@@ -1,3 +1,5 @@
+using Driftya.SpriteAtlasForge.Domain;
+
 namespace Driftya.SpriteAtlasForge.Application;
 
 /// <summary>
@@ -11,5 +13,5 @@ public sealed record AtlasForgeApplicationInfo(
     public static AtlasForgeApplicationInfo Default { get; } = new(
         "Sprite Atlas Forge",
         "Turn existing spritesheets into structured sprite atlases.",
-        ".saf.json");
+        AtlasFormat.NativeExtension);
 }

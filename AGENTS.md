@@ -30,16 +30,11 @@ When changing behavior or UI flows:
 
 ## Test Discipline
 
-When making code changes, run the focused tests and both production hosts before finishing:
+When making code changes, run the repository verification script before finishing:
 
-- Application tests:
-  - `dotnet run --project tests/Driftya.SpriteAtlasForge.Application.Tests/Driftya.SpriteAtlasForge.Application.Tests.csproj --no-restore`
-- CLI build:
-  - `dotnet build src/Driftya.SpriteAtlasForge.CliApplication/Driftya.SpriteAtlasForge.CliApplication.csproj --nologo`
-- Windows MAUI build:
-  - `dotnet build src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj -f net10.0-windows10.0.19041.0 --nologo`
+- `./eng/verify.ps1`
 
-If your change touches additional projects with tests, run those relevant test projects too.
+It builds every production host, runs the focused Domain, Application, Infrastructure, CLI, and Client test projects, collects Cobertura reports, and enforces per-project line-coverage thresholds. Use `-NoRestore` only after a successful restore.
 If any test cannot be run, clearly state that and why in your final update.
 
 

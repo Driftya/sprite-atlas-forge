@@ -1,8 +1,8 @@
 # Sprite Atlas Forge
 
-Sprite Atlas Forge is a Windows-first reverse texture packer. It will take an existing transparent spritesheet, detect its sprites, let users author regions and connector metadata, save a native `.saf.json` project, optionally repack the image, and export formats such as Phaser.
+Sprite Atlas Forge is a Windows-first reverse texture packer. It takes an existing transparent PNG spritesheet, detects its sprites, lets users author connector metadata, saves a native `.saf.json` project, optionally repacks the image, and exports Phaser JSON Hash atlases.
 
-Implementation is currently at Phase 0: the solution architecture, shared dependency-injection boundary, CLI host, and minimal Windows MAUI workspace are established. Detection and native atlas authoring begin in the next phases.
+Phases 0–2 are implemented. The deterministic untrimmed repacker and Phaser exporter are also working, while the interactive Windows editor remains in progress. The MAUI client currently supports open/detect/save, a size-aware zoom/pan viewport, sprite rename, numeric connector create/move/rename/delete, validation, image preview, repack, and Phaser export.
 
 See [the implementation plan](docs/plans/reverse-texture-packer-implementation-plan.md) for the complete checklist and design decisions.
 
@@ -10,12 +10,16 @@ See [the implementation plan](docs/plans/reverse-texture-packer-implementation-p
 
 | Project | Responsibility |
 | --- | --- |
-| `Driftya.SpriteAtlasForge.Domain` | Framework-free atlas rules and value objects; populated in Phase 1 |
-| `Driftya.SpriteAtlasForge.Application` | Use-case contracts and shared application information |
-| `Driftya.SpriteAtlasForge.Infrastructure` | External adapters and shared DI registration |
+| `Driftya.SpriteAtlasForge.Domain` | Framework-free atlas rules, geometry, sprites, connectors, and packing metadata |
+| `Driftya.SpriteAtlasForge.Application` | Shared use-case facade, ports, requests, progress, and diagnostics |
+| `Driftya.SpriteAtlasForge.Infrastructure` | Native JSON, SkiaSharp processing, deterministic packing, exporters, and DI |
 | `Driftya.SpriteAtlasForge.CliApplication` | Automation and language-neutral command-line host |
 | `Driftya.SpriteAtlasForge.ClientApplication` | Windows .NET MAUI desktop editor |
-| `Driftya.SpriteAtlasForge.Application.Tests` | Domain/Application-oriented automated tests |
+| `Driftya.SpriteAtlasForge.Domain.Tests` | Domain invariants and value-object tests |
+| `Driftya.SpriteAtlasForge.Application.Tests` | Application orchestration tests using narrow in-memory fakes |
+| `Driftya.SpriteAtlasForge.Infrastructure.Tests` | Native JSON, SkiaSharp, packing, exporter, and DI integration tests |
+| `Driftya.SpriteAtlasForge.CliApplication.Tests` | CLI parsing and end-to-end command tests |
+| `Driftya.SpriteAtlasForge.ClientApplication.Tests` | Platform-neutral MAUI view-model behavior tests |
 
 Both hosts call the same Application and Infrastructure services in-process. The desktop client does not launch the CLI executable.
 
@@ -40,11 +44,32 @@ dotnet restore Driftya.SpriteAtlasForge.slnx
 dotnet build Driftya.SpriteAtlasForge.slnx --no-restore --nologo
 ```
 
-Run the CLI foundation:
+Inspect the CLI:
 
 ```powershell
 dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- info
 ```
+
+Create and validate a native project:
+
+```powershell
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- detect .\assets\modules.png --output .\assets\modules.saf.json --minimum-area 4 --merge-distance 1
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- validate .\assets\modules.saf.json
+```
+
+Author metadata, repack, and export:
+
+```powershell
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- sprite rename .\assets\modules.saf.json --sprite sprite_001 --new-id habitat_01
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- connector add .\assets\modules.saf.json --sprite habitat_01 --name next --x 120 --y 32
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- connector update .\assets\modules.saf.json --sprite habitat_01 --current-name next --name attachment --x 96 --y 32
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- repack .\assets\modules.saf.json --output .\artifacts\repacked --padding 2
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- export .\assets\modules.saf.json --format phaser-json-hash --output .\artifacts\phaser
+```
+
+Add `--json` to processing commands for machine-readable stdout. Detection currently supports PNG input. Repacking never rotates sprites and preserves connector coordinates.
+
+The native v1 contract and compatibility rules are documented in [docs/native-format.md](docs/native-format.md), with its JSON Schema in [docs/schema/sprite-atlas-forge-v1.schema.json](docs/schema/sprite-atlas-forge-v1.schema.json).
 
 Run the Windows desktop client:
 
@@ -52,15 +77,17 @@ Run the Windows desktop client:
 dotnet run --project src/Driftya.SpriteAtlasForge.ClientApplication -f net10.0-windows10.0.19041.0
 ```
 
-Run tests:
+Build, run every test project, collect Cobertura reports, and enforce the checked-in per-project line-coverage thresholds:
 
 ```powershell
-dotnet run --project tests/Driftya.SpriteAtlasForge.Application.Tests/Driftya.SpriteAtlasForge.Application.Tests.csproj --no-restore
+.\eng\verify.ps1
 ```
+
+Coverage reports are written to `.artifacts/coverage/`. The script uses TUnit's built-in Microsoft Testing Platform coverage extension, so no Coverlet package or global report tool is required.
 
 ## NuGet version policy
 
-Package versions are centralized in `Directory.Packages.props` and float within an approved major version, for example `10.*`, `8.*`, and `2.*`. A normal restore can therefore consume compatible feature, patch, and security releases without silently crossing a major-version boundary.
+Package versions are centralized in `Directory.Packages.props` and float within an approved major version, for example `10.*`, `4.*`, and `2.*`. A normal restore can therefore consume compatible feature, patch, and security releases without silently crossing a major-version boundary.
 
 Major upgrades are manual: review release notes and migration impact, change the major wildcard intentionally, restore, and run the full verification commands. NuGet audit checks are enabled, and Dependabot is configured to propose non-major updates while ignoring major updates.
 

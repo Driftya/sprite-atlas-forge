@@ -1,4 +1,5 @@
 using Driftya.SpriteAtlasForge.Infrastructure;
+using Driftya.SpriteAtlasForge.ClientApplication.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Driftya.SpriteAtlasForge.ClientApplication;
@@ -19,6 +20,7 @@ public static class MauiProgram
             });
 
         builder.Services.AddSpriteAtlasForge();
+        builder.Services.AddSingleton<IWorkspaceFilePicker, MauiWorkspaceFilePicker>();
         builder.Services.AddSingleton<WorkspacePageModel>();
         builder.Services.AddSingleton<MainPage>();
         builder.Services.AddSingleton<AppShell>();

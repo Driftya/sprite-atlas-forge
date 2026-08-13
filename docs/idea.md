@@ -459,3 +459,7 @@ Turn spritesheets into structured sprite atlases.
 That captures the "reverse TexturePacker" idea without defining the product in terms of somebody else's tool.
 
 My vote: AtlasForge. It also leaves room for future Unity, Godot, Phaser, generic JSON, and custom metadata exporters.
+
+## Current implementation note (2026-08-13)
+
+The Windows-first MAUI editor and CLI now share Application use cases for named connector creation, exact numeric movement, rename, and deletion. Connector coordinates remain sprite-local integers and are preserved by native save/load and untrimmed repacking. Canvas click/drag authoring is still planned; the numeric editor is the accessible fallback and current implemented path.
