@@ -7,6 +7,31 @@ namespace Driftya.SpriteAtlasForge.Application;
 /// </summary>
 public static class AtlasProjectEditor
 {
+    public static AtlasProject AddSprite(AtlasProject project, AtlasSprite sprite)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(sprite);
+        return new(
+            project.Name,
+            project.Source,
+            project.Atlas,
+            project.Sprites.Append(sprite),
+            project.FormatVersion);
+    }
+
+    public static AtlasProject RemoveSprite(AtlasProject project, string spriteId)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        var sprite = project.GetSprite(spriteId);
+        return new(
+            project.Name,
+            project.Source,
+            project.Atlas,
+            project.Sprites.Where(candidate =>
+                !string.Equals(candidate.Id, sprite.Id, StringComparison.OrdinalIgnoreCase)),
+            project.FormatVersion);
+    }
+
     public static AtlasProject RenameSprite(AtlasProject project, string spriteId, string newId)
     {
         ArgumentNullException.ThrowIfNull(project);

@@ -330,10 +330,15 @@ No `docs/concept/` assets currently exist in the repository. If concept images a
 - [x] Accept PNG input in v1; return a clear unsupported-format diagnostic for other files.
 - [x] Decode the image through Infrastructure using SkiaSharp.
 - [x] Build a visible-pixel mask using a configurable alpha threshold.
+- [x] Automatically distinguish transparent sheets from fully opaque sheets and remove smoothly varying opaque backgrounds connected to the image border.
+- [x] Derive an automatic alpha cutoff for transparent sheets containing multicolored low-alpha generation or watermark noise.
+- [x] Expose explicit alpha-only and border-connected modes plus a shared background color tolerance through CLI and MAUI.
+- [x] Apply configurable binary-mask opening to remove isolated generation noise and sever thin opaque bridges before component detection.
 - [x] Detect connected components deterministically.
 - [x] Calculate a bounding rectangle for each component.
 - [x] Ignore components below a configurable minimum area.
 - [x] Support a configurable merge distance for disconnected pieces that belong to one logical sprite.
+- [x] Group overlapping and contained component bounds even at zero merge distance so opaque details inside transparent holes stay with their sprite.
 - [x] Apply optional source padding while clamping to image bounds.
 - [x] Sort detected results deterministically, initially top-to-bottom then left-to-right.
 - [x] Surface shared detection defaults through Application; CLI exposes overrides and MAUI uses the same defaults.
@@ -423,6 +428,7 @@ Exit criteria:
 - [x] Build the Windows workspace shell and load/save flow.
 - [x] Build the zoomable/pannable sprite viewport with atlas-size-aware dimensions.
 - [x] Add detection review and basic region correction.
+- [x] Add undoable manual sprite creation and selected-sprite deletion for detection recovery.
 - [x] Add sprite naming and duplicate detection.
 - [x] Add connector create, move, rename, delete, canvas, and numeric editing.
 - [x] Add dirty-state, validation, undo/redo, progress, and cancellation behavior.
@@ -484,7 +490,7 @@ Exit criteria:
 - [x] Domain invariants for rectangles, sprite IDs, connector names, connector bounds, and duplicate IDs.
 - [x] Native format round-trip and version compatibility tests.
 - [x] Golden JSON tests with deterministic ordering.
-- [x] Detection tests using small generated PNG fixtures.
+- [x] Detection tests using small generated PNG fixtures, including transparent, noisy, enclosed-detail, and opaque-gradient backgrounds.
 - [ ] Re-detection metadata-preservation tests.
 - [x] Packing overlap, bounds, padding, determinism, and failure tests for the untrimmed path.
 - [x] Exporter deterministic mapping tests.
@@ -516,11 +522,11 @@ Latest verified results (2026-08-13):
 
 | Production boundary | Tests | Line coverage | Branch coverage | Line gate |
 | --- | ---: | ---: | ---: | ---: |
-| Domain | 15 | 86.3% | 86.2% | 80% |
-| Application | 8 | 84.2% | 62.5% | 75% |
-| Infrastructure | 15 | 87.5% | 70.1% | 80% |
-| CLI | 11 | 98.3% | 100.0% | 70% |
-| Client workspace view model and picker rules | 17 | 81.8% | 57.5% | 80% |
+| Domain | 15 | 88.3% | 86.2% | 80% |
+| Application | 13 | 86.6% | 64.5% | 75% |
+| Infrastructure | 21 | 92.8% | 78.4% | 80% |
+| CLI | 11 | 97.9% | 92.3% | 70% |
+| Client workspace view model and picker rules | 18 | 85.7% | 55.9% | 80% |
 
 ## 12. Cross-cutting completion checklist
 

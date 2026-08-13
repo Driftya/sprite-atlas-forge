@@ -104,6 +104,13 @@ public sealed class WorkspacePageModelTests
         await Assert.That(service.LastDetectRequest).IsNotNull();
         await Assert.That(service.LastDetectRequest!.SourceImagePath).IsEqualTo(imagePath);
         await Assert.That(service.LastDetectRequest.ProjectPath).IsEqualTo(Path.Combine(root, "modules.saf.json"));
+        await Assert.That(service.LastDetectRequest.Options!.MinimumArea)
+            .IsEqualTo(SpriteDetectionOptions.DefaultMinimumArea);
+        await Assert.That(service.LastDetectRequest.Options.NoiseReductionRadius)
+            .IsEqualTo(SpriteDetectionOptions.DefaultNoiseReductionRadius);
+        await Assert.That(service.LastDetectRequest.Options.BackgroundMode).IsEqualTo(SpriteBackgroundMode.Auto);
+        await Assert.That(service.LastDetectRequest.Options.BackgroundColorTolerance)
+            .IsEqualTo(SpriteDetectionOptions.DefaultBackgroundColorTolerance);
         await Assert.That(model.HasProject).IsTrue();
         await Assert.That(model.Sprites).Count().IsEqualTo(1);
         await Assert.That(model.Status).IsEqualTo("Detected 1 sprites.");
@@ -196,6 +203,31 @@ public sealed class WorkspacePageModelTests
         await Assert.That(model.SelectedSprite!.SourceRegion).IsEqualTo(new PixelRect(0, 0, 10, 8));
         model.RedoCommand.Execute(null);
         await Assert.That(model.SelectedSprite!.SourceRegion).IsEqualTo(new PixelRect(2, 3, 6, 5));
+    }
+
+    [Test]
+    public async Task Add_and_delete_sprite_commands_update_selection_overlays_and_undo_history()
+    {
+        var project = CreateProject();
+        var model = CreateLoadedModel(new StubService(project), project);
+
+        await model.AddSpriteCommand.ExecuteAsync(null);
+
+        await Assert.That(model.Sprites).Count().IsEqualTo(2);
+        await Assert.That(model.SelectedSprite!.Id).IsEqualTo("sprite_001");
+        await Assert.That(model.SelectedSprite.SourceRegion).IsEqualTo(new PixelRect(0, 0, 16, 16));
+        await Assert.That(model.SpriteOverlays).Count().IsEqualTo(2);
+        await Assert.That(model.IsDirty).IsTrue();
+        await Assert.That(model.CanUndo).IsTrue();
+
+        await model.DeleteSelectedSpriteCommand.ExecuteAsync(null);
+
+        await Assert.That(model.Sprites).Count().IsEqualTo(1);
+        await Assert.That(model.SelectedSprite!.Id).IsEqualTo("module");
+        await Assert.That(model.Status).IsEqualTo("Sprite 'sprite_001' deleted.");
+        model.UndoCommand.Execute(null);
+        await Assert.That(model.Sprites).Count().IsEqualTo(2);
+        await Assert.That(model.SelectedSprite!.Id).IsEqualTo("sprite_001");
     }
 
     [Test]

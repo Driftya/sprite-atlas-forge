@@ -62,6 +62,9 @@ public partial class WorkspacePageModel : ObservableObject
 
     public IReadOnlyList<string> ExportFormats { get; } = ["native", "phaser-json-hash"];
 
+    public IReadOnlyList<string> DetectionBackgroundModes { get; } =
+        ["Auto", "Alpha only", "Border connected"];
+
     public bool HasProject => CurrentProject is not null;
 
     public bool CanUndo => _undoHistory.Count > 0;
@@ -110,6 +113,29 @@ public partial class WorkspacePageModel : ObservableObject
 
     [ObservableProperty]
     public partial bool IsDirty { get; set; }
+
+    [ObservableProperty]
+    public partial int DetectionAlphaThreshold { get; set; } = SpriteDetectionOptions.DefaultAlphaThreshold;
+
+    [ObservableProperty]
+    public partial string DetectionBackgroundMode { get; set; } = "Auto";
+
+    [ObservableProperty]
+    public partial int DetectionBackgroundTolerance { get; set; } =
+        SpriteDetectionOptions.DefaultBackgroundColorTolerance;
+
+    [ObservableProperty]
+    public partial int DetectionMinimumArea { get; set; } = SpriteDetectionOptions.DefaultMinimumArea;
+
+    [ObservableProperty]
+    public partial int DetectionMergeDistance { get; set; } = SpriteDetectionOptions.DefaultMergeDistance;
+
+    [ObservableProperty]
+    public partial int DetectionNoiseReductionRadius { get; set; } =
+        SpriteDetectionOptions.DefaultNoiseReductionRadius;
+
+    [ObservableProperty]
+    public partial int DetectionSourcePadding { get; set; }
 
     [ObservableProperty]
     public partial string SelectedExportFormat { get; set; } = "phaser-json-hash";
@@ -200,7 +226,10 @@ public partial class WorkspacePageModel : ObservableObject
                 Path.GetDirectoryName(filePath)!,
                 Path.GetFileNameWithoutExtension(filePath) + NativeProjectExtension);
             var project = await _atlasForgeService.DetectAsync(
-                new DetectAtlasRequest(filePath, projectPath),
+                new DetectAtlasRequest(
+                    filePath,
+                    projectPath,
+                    Options: CreateDetectionOptions()),
                 CreateProgress(),
                 token);
             LoadWorkspace(project, projectPath);
@@ -290,6 +319,63 @@ public partial class WorkspacePageModel : ObservableObject
                     $"{diagnostic.Code}: {diagnostic.Message}"));
             return Task.CompletedTask;
         }, cancellationToken);
+    }
+
+    [RelayCommand]
+    private Task AddSpriteAsync(CancellationToken cancellationToken)
+    {
+        if (CurrentProject is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (CurrentProject.Atlas.Repacked)
+        {
+            Status = "Add sprites before repacking the atlas.";
+            return Task.CompletedTask;
+        }
+
+        var spriteId = CreateNextSpriteId(CurrentProject);
+        var width = Math.Min(64, CurrentProject.Source.Size.Width);
+        var height = Math.Min(64, CurrentProject.Source.Size.Height);
+        var x = (CurrentProject.Source.Size.Width - width) / 2;
+        var y = (CurrentProject.Source.Size.Height - height) / 2;
+        var region = new PixelRect(x, y, width, height);
+        return ApplyEditAsync(
+            () => AtlasProjectEditor.AddSprite(
+                CurrentProject,
+                new AtlasSprite(spriteId, region, region)),
+            spriteId,
+            null,
+            "Sprite added. Adjust its source region, then choose Update region.",
+            cancellationToken);
+    }
+
+    [RelayCommand]
+    private Task DeleteSelectedSpriteAsync(CancellationToken cancellationToken)
+    {
+        if (CurrentProject is null || SelectedSprite is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var selectedId = SelectedSprite.Id;
+        var selectedIndex = CurrentProject.Sprites
+            .Select((sprite, index) => (sprite, index))
+            .First(item => string.Equals(item.sprite.Id, selectedId, StringComparison.OrdinalIgnoreCase))
+            .index;
+        var remaining = CurrentProject.Sprites
+            .Where(sprite => !string.Equals(sprite.Id, selectedId, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        var nextSelection = remaining.Length == 0
+            ? null
+            : remaining[Math.Min(selectedIndex, remaining.Length - 1)].Id;
+        return ApplyEditAsync(
+            () => AtlasProjectEditor.RemoveSprite(CurrentProject, selectedId),
+            nextSelection,
+            null,
+            $"Sprite '{selectedId}' deleted.",
+            cancellationToken);
     }
 
     [RelayCommand]
@@ -669,6 +755,48 @@ public partial class WorkspacePageModel : ObservableObject
         Status = progress.Message;
         OnPropertyChanged(nameof(HasProgress));
     });
+
+    private SpriteDetectionOptions CreateDetectionOptions()
+    {
+        if (DetectionAlphaThreshold is < byte.MinValue or > byte.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(DetectionAlphaThreshold),
+                "Alpha threshold must be between 0 and 255.");
+        }
+
+        var options = new SpriteDetectionOptions
+        {
+            AlphaThreshold = (byte)DetectionAlphaThreshold,
+            BackgroundMode = DetectionBackgroundMode switch
+            {
+                "Auto" => SpriteBackgroundMode.Auto,
+                "Alpha only" => SpriteBackgroundMode.AlphaOnly,
+                "Border connected" => SpriteBackgroundMode.BorderConnected,
+                _ => throw new ArgumentException($"Unsupported background mode '{DetectionBackgroundMode}'."),
+            },
+            BackgroundColorTolerance = DetectionBackgroundTolerance,
+            MinimumArea = DetectionMinimumArea,
+            MergeDistance = DetectionMergeDistance,
+            NoiseReductionRadius = DetectionNoiseReductionRadius,
+            SourcePadding = DetectionSourcePadding,
+        };
+        options.Validate();
+        return options;
+    }
+
+    private static string CreateNextSpriteId(AtlasProject project)
+    {
+        for (var number = 1; ; number++)
+        {
+            var candidate = $"sprite_{number:000}";
+            if (!project.Sprites.Any(sprite =>
+                    string.Equals(sprite.Id, candidate, StringComparison.OrdinalIgnoreCase)))
+            {
+                return candidate;
+            }
+        }
+    }
 
     private async Task SaveIfDirtyAsync(CancellationToken cancellationToken)
     {

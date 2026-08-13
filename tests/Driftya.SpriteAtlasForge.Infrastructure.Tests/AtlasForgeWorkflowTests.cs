@@ -26,7 +26,16 @@ public sealed class AtlasForgeWorkflowTests
             new LocalAtlasFileSystem(),
             [new NativeAtlasExporter(store), new PhaserJsonHashExporter()]);
 
-        var detected = await service.DetectAsync(new DetectAtlasRequest(imagePath, projectPath, "modules"));
+        var detected = await service.DetectAsync(new DetectAtlasRequest(
+            imagePath,
+            projectPath,
+            "modules",
+            new SpriteDetectionOptions
+            {
+                MinimumArea = 1,
+                MergeDistance = 0,
+                NoiseReductionRadius = 0,
+            }));
         var connected = await service.AddConnectorAsync(
             new AddConnectorRequest(projectPath, "sprite_001", "next", 3, 2));
         var validation = await service.ValidateAsync(projectPath);

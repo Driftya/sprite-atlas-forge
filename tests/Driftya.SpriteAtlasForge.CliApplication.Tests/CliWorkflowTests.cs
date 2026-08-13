@@ -29,10 +29,12 @@ public sealed class CliWorkflowTests
         var cli = new AtlasForgeCli(service, AtlasForgeApplicationInfo.Default);
 
         var firstExitCode = await cli.CreateRootCommand().Parse([
-            "detect", imagePath, "--output", firstPath, "--name", "cli-smoke", "--json",
+            "detect", imagePath, "--output", firstPath, "--name", "cli-smoke",
+            "--minimum-area", "1", "--merge-distance", "0", "--noise-reduction-radius", "0", "--json",
         ]).InvokeAsync();
         var secondExitCode = await cli.CreateRootCommand().Parse([
-            "detect", imagePath, "--output", secondPath, "--name", "cli-smoke", "--json",
+            "detect", imagePath, "--output", secondPath, "--name", "cli-smoke",
+            "--minimum-area", "1", "--merge-distance", "0", "--noise-reduction-radius", "0", "--json",
         ]).InvokeAsync();
 
         await Assert.That(firstExitCode).IsEqualTo(0);
@@ -58,7 +60,10 @@ public sealed class CliWorkflowTests
             new LocalAtlasFileSystem(),
             [new NativeAtlasExporter(store), new PhaserJsonHashExporter()]);
         var root = new AtlasForgeCli(service, AtlasForgeApplicationInfo.Default).CreateRootCommand();
-        await root.Parse(["detect", imagePath, "--output", projectPath]).InvokeAsync();
+        await root.Parse([
+            "detect", imagePath, "--output", projectPath,
+            "--minimum-area", "1", "--merge-distance", "0", "--noise-reduction-radius", "0",
+        ]).InvokeAsync();
 
         var addExitCode = await root.Parse([
             "connector", "add", projectPath, "--sprite", "sprite_001", "--name", "next", "--x", "4", "--y", "3",

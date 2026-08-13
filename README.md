@@ -1,6 +1,6 @@
 # Sprite Atlas Forge
 
-Sprite Atlas Forge is a Windows-first reverse texture packer. It takes an existing transparent PNG spritesheet, detects its sprites, lets users author connector metadata, saves a native `.saf.json` project, optionally repacks the image, and exports Phaser JSON Hash atlases.
+Sprite Atlas Forge is a Windows-first reverse texture packer. It takes an existing PNG spritesheet with either transparency or a border-connected background, detects its sprites, lets users author connector metadata, saves a native `.saf.json` project, optionally repacks the image, and exports Phaser JSON Hash atlases.
 
 Phases 0–3 are implemented. The deterministic untrimmed repacker and Phaser exporter are also working. The Windows MAUI client supports open/detect/save/save-as, editable sprite regions, a zoomable/pannable atlas canvas with sprite and connector overlays, click/drag plus numeric connector editing, dirty-state protection, undo/redo, validation, cancellable progress, repacking, and Phaser export.
 
@@ -70,7 +70,25 @@ dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- export .\ass
 
 Add `--json` to processing commands for machine-readable stdout. Detection currently supports PNG input. Repacking never rotates sprites and preserves connector coordinates.
 
-Detection defaults to a maximum source size of 16,384×16,384 and 67,108,864 total pixels. These limits are independently configurable with `--max-width`, `--max-height`, and `--max-pixels`; the pixel cap bounds the detector's bitmap, visited-mask, and flood-fill queue memory before those working buffers are allocated.
+Generated-art detection defaults to automatic background selection, background tolerance 12, alpha threshold 8, minimum area 64, two-pixel grouping distance, and a one-pixel mask-opening cleanup. Automatic mode analyzes the image's alpha histogram and raises the effective cutoff when colored low-alpha noise would otherwise connect the sheet. For a fully opaque sheet, it flood-fills the smoothly varying background from the image border. The cleanup removes isolated opaque specks and severs thin artifact bridges before connected-component detection. Overlapping or contained component bounds are then grouped, so disconnected opaque details inside an enclosed area remain part of the surrounding sprite. `Alpha only` keeps the entered alpha threshold exact. The MAUI property panel exposes these detection controls before **Open image**.
+
+For an opaque generated sheet, start with `auto`. If the source is known to be opaque, `border-connected` makes that choice explicit. Lower the tolerance if background removal enters a sprite; raise it if pieces of the background remain:
+
+```powershell
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- detect .\opaque-sheet.png --output .\opaque-sheet.saf.json --background-mode border-connected --background-tolerance 12
+```
+
+Border-connected removal assumes every image-edge pixel is background. Add a small background margin around sprites that touch the source edge, or use `alpha-only` for a genuinely transparent sheet.
+
+The MAUI sprite panel also supports manual recovery: **Add sprite** creates and selects a centered region with a unique `sprite_NNN` ID, which can then be corrected through **Source region**. **Delete selected** removes the current region. Both operations participate in undo/redo; adding to an already repacked atlas is intentionally blocked.
+
+For deliberately tiny pixel art, disable cleanup and filtering:
+
+```powershell
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- detect .\pixel-art.png --output .\pixel-art.saf.json --minimum-area 1 --merge-distance 0 --noise-reduction-radius 0
+```
+
+Detection also defaults to a maximum source size of 16,384×16,384 and 67,108,864 total pixels. These limits are independently configurable with `--max-width`, `--max-height`, and `--max-pixels`; the pixel cap bounds the detector's bitmap, mask, and flood-fill queue memory before those working buffers are allocated.
 
 CLI exit codes are stable: `0` success, `1` invalid command arguments, `3` invalid project data, `4` I/O or access failure, `5` cancellation, and `6` processing failure. Commands never prompt interactively, including in JSON mode.
 

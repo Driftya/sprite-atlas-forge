@@ -38,7 +38,8 @@ public sealed class AtlasForgeCliTests
             "detect", "source.png", "--output", "project.saf.json", "--name", "modules",
             "--alpha-threshold", "12", "--minimum-area", "3", "--merge-distance", "2",
             "--source-padding", "1", "--max-width", "2048", "--max-height", "1024",
-            "--max-pixels", "1000000", "--json",
+            "--max-pixels", "1000000", "--noise-reduction-radius", "2",
+            "--background-mode", "border-connected", "--background-tolerance", "15", "--json",
         ]).InvokeAsync();
 
         await Assert.That(exitCode).IsEqualTo(0);
@@ -48,6 +49,10 @@ public sealed class AtlasForgeCliTests
         await Assert.That(service.LastDetectRequest.Options.MinimumArea).IsEqualTo(3);
         await Assert.That(service.LastDetectRequest.Options.MergeDistance).IsEqualTo(2);
         await Assert.That(service.LastDetectRequest.Options.SourcePadding).IsEqualTo(1);
+        await Assert.That(service.LastDetectRequest.Options.NoiseReductionRadius).IsEqualTo(2);
+        await Assert.That(service.LastDetectRequest.Options.BackgroundMode)
+            .IsEqualTo(SpriteBackgroundMode.BorderConnected);
+        await Assert.That(service.LastDetectRequest.Options.BackgroundColorTolerance).IsEqualTo(15);
         await Assert.That(service.LastDetectRequest.Options.MaximumWidth).IsEqualTo(2048);
         await Assert.That(service.LastDetectRequest.Options.MaximumHeight).IsEqualTo(1024);
         await Assert.That(service.LastDetectRequest.Options.MaximumPixels).IsEqualTo(1_000_000);

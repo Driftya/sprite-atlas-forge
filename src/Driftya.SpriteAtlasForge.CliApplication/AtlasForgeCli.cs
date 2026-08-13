@@ -50,9 +50,25 @@ public sealed class AtlasForgeCli
         var image = new Argument<string>("image") { Description = "PNG spritesheet to inspect." };
         var output = RequiredOption("--output", "Destination .saf.json project path.");
         var name = new Option<string?>("--name") { Description = "Project name. Defaults to the PNG filename." };
-        var alphaThreshold = new Option<int?>("--alpha-threshold") { Description = "Visible-pixel alpha threshold (default: 8)." };
-        var minimumArea = new Option<int?>("--minimum-area") { Description = "Minimum visible pixels in a component (default: 1)." };
-        var mergeDistance = new Option<int?>("--merge-distance") { Description = "Maximum gap for merging disconnected pieces (default: 0)." };
+        var alphaThreshold = new Option<int?>("--alpha-threshold")
+        {
+            Description = "Minimum alpha cutoff in auto mode; exact cutoff in alpha-only mode (default: 8).",
+        };
+        var minimumArea = new Option<int?>("--minimum-area") { Description = "Minimum cleaned pixels in a component (default: 64)." };
+        var mergeDistance = new Option<int?>("--merge-distance") { Description = "Maximum gap for grouping disconnected pieces (default: 2)." };
+        var noiseReductionRadius = new Option<int?>("--noise-reduction-radius")
+        {
+            Description = "Mask-opening radius for removing specks and thin bridges, 0-4 (default: 1).",
+        };
+        var backgroundMode = new Option<string?>("--background-mode")
+        {
+            Description = "Background handling: auto, alpha-only, or border-connected (default: auto).",
+        };
+        backgroundMode.AcceptOnlyFromAmong("auto", "alpha-only", "border-connected");
+        var backgroundTolerance = new Option<int?>("--background-tolerance")
+        {
+            Description = "Maximum per-channel border-background color step, 0-255 (default: 12).",
+        };
         var sourcePadding = new Option<int?>("--source-padding") { Description = "Padding added around detected regions (default: 0)." };
         var maximumWidth = new Option<int?>("--max-width") { Description = "Maximum source width (default: 16384)." };
         var maximumHeight = new Option<int?>("--max-height") { Description = "Maximum source height (default: 16384)." };
@@ -65,6 +81,9 @@ public sealed class AtlasForgeCli
         command.Options.Add(alphaThreshold);
         command.Options.Add(minimumArea);
         command.Options.Add(mergeDistance);
+        command.Options.Add(noiseReductionRadius);
+        command.Options.Add(backgroundMode);
+        command.Options.Add(backgroundTolerance);
         command.Options.Add(sourcePadding);
         command.Options.Add(maximumWidth);
         command.Options.Add(maximumHeight);
@@ -81,8 +100,13 @@ public sealed class AtlasForgeCli
             var options = new SpriteDetectionOptions
             {
                 AlphaThreshold = (byte)threshold,
-                MinimumArea = parseResult.GetValue(minimumArea) ?? 1,
-                MergeDistance = parseResult.GetValue(mergeDistance) ?? 0,
+                MinimumArea = parseResult.GetValue(minimumArea) ?? SpriteDetectionOptions.DefaultMinimumArea,
+                MergeDistance = parseResult.GetValue(mergeDistance) ?? SpriteDetectionOptions.DefaultMergeDistance,
+                NoiseReductionRadius = parseResult.GetValue(noiseReductionRadius) ??
+                    SpriteDetectionOptions.DefaultNoiseReductionRadius,
+                BackgroundMode = ParseBackgroundMode(parseResult.GetValue(backgroundMode)),
+                BackgroundColorTolerance = parseResult.GetValue(backgroundTolerance) ??
+                    SpriteDetectionOptions.DefaultBackgroundColorTolerance,
                 SourcePadding = parseResult.GetValue(sourcePadding) ?? 0,
                 MaximumWidth = parseResult.GetValue(maximumWidth) ?? 16_384,
                 MaximumHeight = parseResult.GetValue(maximumHeight) ?? 16_384,
@@ -110,6 +134,14 @@ public sealed class AtlasForgeCli
         }));
         return command;
     }
+
+    private static SpriteBackgroundMode ParseBackgroundMode(string? value) => value switch
+    {
+        null or "auto" => SpriteBackgroundMode.Auto,
+        "alpha-only" => SpriteBackgroundMode.AlphaOnly,
+        "border-connected" => SpriteBackgroundMode.BorderConnected,
+        _ => throw new ArgumentException($"Unsupported background mode '{value}'."),
+    };
 
     private Command CreateValidateCommand()
     {
