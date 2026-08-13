@@ -64,13 +64,60 @@ public sealed class AtlasForgeServiceTests
             "project.saf.json", "module", "next", "attachment", 6, 3));
         var renamed = await service.RenameSpriteAsync(new("project.saf.json", "module", "habitat"));
         var removed = await service.RemoveConnectorAsync(new("project.saf.json", "habitat", "attachment"));
+        var regionUpdated = await service.UpdateSpriteRegionAsync(new(
+            "project.saf.json", "habitat", 1, 2, 6, 5));
 
         await Assert.That(added.GetSprite("module").Connectors).Count().IsEqualTo(1);
         await Assert.That(updated.GetSprite("module").Connectors[0])
             .IsEqualTo(new AtlasConnector("attachment", 6, 3));
         await Assert.That(renamed.GetSprite("habitat").Id).IsEqualTo("habitat");
         await Assert.That(removed.GetSprite("habitat").Connectors).IsEmpty();
-        await Assert.That(store.SaveCount).IsEqualTo(4);
+        await Assert.That(regionUpdated.GetSprite("habitat").SourceRegion)
+            .IsEqualTo(new PixelRect(1, 2, 6, 5));
+        await Assert.That(regionUpdated.GetSprite("habitat").Frame)
+            .IsEqualTo(new PixelRect(1, 2, 6, 5));
+        await Assert.That(store.SaveCount).IsEqualTo(5);
+    }
+
+    [Test]
+    public async Task Save_as_copies_each_distinct_asset_and_writes_the_destination_descriptor()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var sourceProject = Path.Combine(root, "original", "project.saf.json");
+        var destinationProject = Path.Combine(root, "copy", "project.saf.json");
+        var project = CreateProject();
+        var store = new MemoryProjectStore { Project = project };
+        var fileSystem = new RecordingFileSystem();
+        var service = CreateService(store, new StubDetector(CreateDetection()), fileSystem: fileSystem);
+
+        await service.SaveAsAsync(project, sourceProject, destinationProject);
+
+        await Assert.That(fileSystem.CopyCount).IsEqualTo(1);
+        await Assert.That(fileSystem.SourcePaths[0])
+            .IsEqualTo(Path.Combine(root, "original", "source.png"));
+        await Assert.That(fileSystem.DestinationPaths[0])
+            .IsEqualTo(Path.Combine(root, "copy", "source.png"));
+        await Assert.That(store.SavedPath).IsEqualTo(destinationProject);
+    }
+
+    [Test]
+    public async Task In_memory_editor_rejects_duplicate_ids_missing_connectors_and_out_of_bounds_regions()
+    {
+        var project = new AtlasProject(
+            "project",
+            new AtlasSource("source.png", new PixelSize(16, 16), new string('a', 64)),
+            new AtlasOutput("source.png", new PixelSize(16, 16), false),
+            [
+                new AtlasSprite("one", new PixelRect(0, 0, 8, 8), new PixelRect(0, 0, 8, 8)),
+                new AtlasSprite("two", new PixelRect(8, 0, 8, 8), new PixelRect(8, 0, 8, 8)),
+            ]);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => Task.FromResult(
+            AtlasProjectEditor.RenameSprite(project, "one", "two")));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => Task.FromResult(
+            AtlasProjectEditor.RemoveConnector(project, "one", "missing")));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Task.FromResult(
+            AtlasProjectEditor.UpdateSpriteRegion(project, "one", new PixelRect(15, 15, 2, 2))));
     }
 
     [Test]
@@ -226,6 +273,8 @@ public sealed class AtlasForgeServiceTests
     private sealed class RecordingFileSystem : IAtlasFileSystem
     {
         public int CopyCount { get; private set; }
+        public List<string> SourcePaths { get; } = [];
+        public List<string> DestinationPaths { get; } = [];
 
         public Task CopyFileAtomicallyAsync(
             string sourcePath,
@@ -233,6 +282,8 @@ public sealed class AtlasForgeServiceTests
             CancellationToken cancellationToken = default)
         {
             CopyCount++;
+            SourcePaths.Add(sourcePath);
+            DestinationPaths.Add(destinationPath);
             return Task.CompletedTask;
         }
     }

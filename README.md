@@ -2,7 +2,7 @@
 
 Sprite Atlas Forge is a Windows-first reverse texture packer. It takes an existing transparent PNG spritesheet, detects its sprites, lets users author connector metadata, saves a native `.saf.json` project, optionally repacks the image, and exports Phaser JSON Hash atlases.
 
-Phases 0–2 are implemented. The deterministic untrimmed repacker and Phaser exporter are also working, while the interactive Windows editor remains in progress. The MAUI client currently supports open/detect/save, a size-aware zoom/pan viewport, sprite rename, numeric connector create/move/rename/delete, validation, image preview, repack, and Phaser export.
+Phases 0–3 are implemented. The deterministic untrimmed repacker and Phaser exporter are also working. The Windows MAUI client supports open/detect/save/save-as, editable sprite regions, a zoomable/pannable atlas canvas with sprite and connector overlays, click/drag plus numeric connector editing, dirty-state protection, undo/redo, validation, cancellable progress, repacking, and Phaser export.
 
 See [the implementation plan](docs/plans/reverse-texture-packer-implementation-plan.md) for the complete checklist and design decisions.
 
@@ -61,6 +61,7 @@ Author metadata, repack, and export:
 
 ```powershell
 dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- sprite rename .\assets\modules.saf.json --sprite sprite_001 --new-id habitat_01
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- sprite region .\assets\modules.saf.json --sprite habitat_01 --x 16 --y 24 --width 128 --height 64
 dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- connector add .\assets\modules.saf.json --sprite habitat_01 --name next --x 120 --y 32
 dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- connector update .\assets\modules.saf.json --sprite habitat_01 --current-name next --name attachment --x 96 --y 32
 dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- repack .\assets\modules.saf.json --output .\artifacts\repacked --padding 2
@@ -68,6 +69,10 @@ dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- export .\ass
 ```
 
 Add `--json` to processing commands for machine-readable stdout. Detection currently supports PNG input. Repacking never rotates sprites and preserves connector coordinates.
+
+Detection defaults to a maximum source size of 16,384×16,384 and 67,108,864 total pixels. These limits are independently configurable with `--max-width`, `--max-height`, and `--max-pixels`; the pixel cap bounds the detector's bitmap, visited-mask, and flood-fill queue memory before those working buffers are allocated.
+
+CLI exit codes are stable: `0` success, `1` invalid command arguments, `3` invalid project data, `4` I/O or access failure, `5` cancellation, and `6` processing failure. Commands never prompt interactively, including in JSON mode.
 
 The native v1 contract and compatibility rules are documented in [docs/native-format.md](docs/native-format.md), with its JSON Schema in [docs/schema/sprite-atlas-forge-v1.schema.json](docs/schema/sprite-atlas-forge-v1.schema.json).
 

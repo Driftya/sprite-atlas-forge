@@ -31,6 +31,14 @@ public sealed record RenameSpriteRequest(
     string SpriteId,
     string NewId);
 
+public sealed record UpdateSpriteRegionRequest(
+    string ProjectPath,
+    string SpriteId,
+    int X,
+    int Y,
+    int Width,
+    int Height);
+
 public sealed record ExportAtlasRequest(
     string ProjectPath,
     string Format,

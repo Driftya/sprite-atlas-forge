@@ -24,12 +24,22 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
 
         var imageBytes = await File.ReadAllBytesAsync(imagePath, cancellationToken).ConfigureAwait(false);
         var sha256 = Convert.ToHexStringLower(SHA256.HashData(imageBytes));
-        using var bitmap = SKBitmap.Decode(imageBytes)
-            ?? throw new InvalidDataException("The PNG image could not be decoded.");
+        using var bitmap = SkiaPngDecoder.Decode(imageBytes, "The PNG image could not be decoded.");
 
         if (bitmap.Width <= 0 || bitmap.Height <= 0)
         {
             throw new InvalidDataException("The PNG image has invalid dimensions.");
+        }
+
+        var pixelCount = checked((long)bitmap.Width * bitmap.Height);
+        if (bitmap.Width > options.MaximumWidth ||
+            bitmap.Height > options.MaximumHeight ||
+            pixelCount > options.MaximumPixels)
+        {
+            throw new InvalidDataException(
+                $"The PNG image is {bitmap.Width}x{bitmap.Height} ({pixelCount:N0} pixels), which exceeds " +
+                $"the configured detection limit of {options.MaximumWidth}x{options.MaximumHeight} and " +
+                $"{options.MaximumPixels:N0} pixels.");
         }
 
         var size = new PixelSize(bitmap.Width, bitmap.Height);

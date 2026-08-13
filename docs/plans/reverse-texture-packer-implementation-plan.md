@@ -1,6 +1,6 @@
 # Reverse Texture Packer Implementation Plan
 
-Status: In progress — Phases 0–2 complete; Phases 3–5 partially implemented
+Status: In progress — Phases 0–3 complete; Phases 4–5 implemented for the untrimmed v1 path; Phase 6 remains
 Last updated: 2026-08-13  
 Target: Windows desktop first; macOS may be added later
 
@@ -130,11 +130,11 @@ GitHub stars are a useful adoption signal, not a quality guarantee. The star and
 
 There is not currently a C# atlas-packing package that clearly combines high adoption, recent releases, strong maintenance, deterministic behavior, and the exact constraints required here.
 
-- [ ] Evaluate [RectpackSharp](https://github.com/ThomasMiz/RectpackSharp) behind `IAtlasPacker`; it is small, MIT licensed, purpose-built, and has tests, but its latest NuGet release observed during planning was from 2023 and the repository had about 122 stars.
-- [ ] Evaluate [StbRectPackSharp](https://github.com/StbSharp/StbRectPackSharp) only as a secondary candidate; it is a small public-domain C# port of `stb_rect_pack`, but adoption is low and maintenance evidence is limited.
-- [ ] Search NuGet and GitHub again immediately before Phase 4 because a better maintained package may exist by then.
-- [ ] Reject a candidate that cannot provide padding, bounds, no-rotation mode, stable item identity, deterministic results, and failure reporting.
-- [ ] If no library passes the gates, isolate the smallest proven packing algorithm inside Infrastructure, retain upstream attribution/license where applicable, and cover it heavily with property/boundary tests. This is the exception to the library-first rule, not the preferred outcome.
+- [x] Evaluate [RectpackSharp](https://github.com/ThomasMiz/RectpackSharp); reject it for v1 because its maintenance/adoption evidence did not clear the dependency gate.
+- [x] Evaluate [StbRectPackSharp](https://github.com/StbSharp/StbRectPackSharp); reject it because adoption and maintenance evidence are limited.
+- [x] Search NuGet and GitHub immediately before Phase 4; no better maintained exact-fit package was found.
+- [x] Reject candidates that cannot provide padding, bounds, no-rotation mode, stable item identity, deterministic results, and failure reporting.
+- [x] Isolate the small `deterministic-shelf-v1` fallback behind `IAtlasPacker` and cover its bounds, overlap, padding, determinism, and failure behavior.
 
 ### Libraries not approved by default
 
@@ -275,8 +275,8 @@ CLI requirements:
 - [ ] Provide `--help` and examples for every command.
 - [x] Support `--json` for machine-readable results and diagnostics.
 - [x] Write normal results to stdout and errors/diagnostics to stderr.
-- [ ] Use stable documented exit codes for success, invalid arguments, invalid project data, I/O failure, cancellation, and processing failure.
-- [ ] Never emit interactive prompts when `--json` or a non-interactive flag is active.
+- [x] Use stable documented exit codes for success, invalid arguments, invalid project data, I/O/access failure, cancellation, and processing failure.
+- [x] Never emit interactive prompts when `--json` or a non-interactive flag is active.
 - [x] Avoid partial output through staging and atomic moves.
 - [x] Resolve relative paths against the process working directory.
 - [x] Make the same input, options, and tool version produce deterministic descriptor output.
@@ -289,35 +289,35 @@ CLI requirements:
 
 - [x] Replace the current project/task dashboard template with an atlas workspace.
 - [x] Remove SQLite-backed task/project/category/tag template behavior unless a specific atlas requirement justifies persistence beyond `.saf.json` files.
-- [ ] Provide Open Image, Open Project, Save, Save As, Detect, Repack, Validate, and Export actions. Open, save, detect, repack, validate, and Phaser export are implemented; Save As remains.
+- [x] Provide Open Image, Open Project, Save, Save As, Detect, Repack, Validate, and Export actions.
 - [ ] Support Windows file picker and drag/drop for PNG and `.saf.json` files.
-- [ ] Show a central canvas with zoom, pan, selection, sprite bounds, labels, and connectors. Size-aware 25–800% zoom and two-axis panning are implemented; interactive overlays remain.
+- [x] Show a central canvas with zoom, pan, selection, sprite bounds, labels, and connectors. The canvas supports 25–800% zoom and two-axis panning.
 - [ ] Show a sprite list with search, ID, warning state, and visibility toggle. Selection and IDs are implemented; search, warning, and visibility controls remain.
 - [ ] Show a property panel for region, connector list, tags, and custom properties. Regions and connectors are implemented; tags and custom-property editing remain.
 - [ ] Show structured validation errors that navigate to the affected sprite or field.
-- [ ] Show progress and allow cancellation for detection, repacking, and export.
-- [ ] Track dirty state and confirm before discarding unsaved edits.
-- [ ] Add undo/redo for metadata and region edits before enabling complex manual editing.
+- [x] Show progress and allow cancellation for detection, repacking, and export.
+- [x] Track dirty state and confirm before discarding unsaved edits.
+- [x] Add undo/redo for metadata and region edits before enabling complex manual editing.
 - [x] Keep all editor state in view models/application session models, not code-behind.
 
 ### 7.2 Connector editor
 
-- [ ] Let the user enter connector-placement mode for the selected sprite.
-- [ ] Add a connector by clicking the sprite and assigning a unique name. Unique named numeric entry is implemented; canvas click placement remains.
-- [ ] Render each connector as a clear dot with a label and selected state.
-- [ ] Move a connector by drag or exact numeric X/Y input. Exact numeric movement is implemented; canvas drag remains.
+- [x] Let the user enter connector-placement mode for the selected sprite by entering a connector name before clicking.
+- [x] Add a connector by clicking the sprite and assigning a unique name.
+- [x] Render each connector as a clear dot with a label and selected state.
+- [x] Move a connector by drag or exact numeric X/Y input.
 - [x] Rename and delete a selected connector through MAUI, CLI, and the shared Application operation.
 - [x] Snap to integer pixels by default through integer connector coordinates and numeric inputs.
 - [x] Clamp or reject invalid coordinates consistently with Domain validation. Coordinates outside logical sprite bounds are rejected.
 - [x] Keep keyboard navigation and a numeric-input alternative for accessibility.
-- [ ] Ensure zoom and pan transforms do not change saved sprite-local coordinates.
+- [x] Ensure zoom and pan transforms do not change saved sprite-local coordinates.
 - [x] Save and reload connectors without coordinate drift.
 
 ### 7.3 Platform targeting
 
-- [ ] Change the client target frameworks to Windows-only for v1.
-- [ ] Remove Android and iOS startup/resources after verifying that nothing product-specific depends on them.
-- [ ] Decide whether to keep dormant Mac Catalyst files or restore them from version control when macOS work begins.
+- [x] Change the client target frameworks to Windows-only for v1.
+- [x] Remove Android and iOS startup/resources after verifying that nothing product-specific depends on them.
+- [x] Keep dormant Mac Catalyst bootstrap files for a possible future macOS target; they are not compiled by the Windows-only v1 target.
 - [x] Keep platform-specific file pickers, drag/drop, shell integration, and packaging inside ClientApplication.
 - [ ] Verify Windows high-DPI scaling, large images, keyboard use, and dark/light themes.
 
@@ -422,16 +422,16 @@ Exit criteria:
 
 - [x] Build the Windows workspace shell and load/save flow.
 - [x] Build the zoomable/pannable sprite viewport with atlas-size-aware dimensions.
-- [ ] Add detection review and basic region correction.
+- [x] Add detection review and basic region correction.
 - [x] Add sprite naming and duplicate detection.
-- [ ] Add connector create, move, rename, delete, and numeric editing. Exact numeric create/move/rename/delete is complete; canvas placement and drag remain.
-- [ ] Add dirty-state, validation, undo/redo, progress, and cancellation behavior.
+- [x] Add connector create, move, rename, delete, canvas, and numeric editing.
+- [x] Add dirty-state, validation, undo/redo, progress, and cancellation behavior.
 - [x] Verify that MAUI and CLI use the same defaults and Application operations.
 
 Exit criteria:
 
-- [ ] A user can open a spritesheet, detect sprites, name them, place multiple connectors, save, close, and reopen with identical coordinates.
-- [ ] The same native project validates identically in MAUI and CLI.
+- [x] A user can open a spritesheet, detect sprites, name them, place multiple connectors, save, close, and reopen with identical coordinates.
+- [x] The same native project validates identically in MAUI and CLI through the shared validator.
 
 ### Phase 4 — Repacking
 
@@ -440,7 +440,7 @@ Exit criteria:
 - [x] Compose and encode the new atlas image.
 - [x] Update frames without changing logical connector coordinates.
 - [ ] Add trim metadata and trimming only after the untrimmed path is stable.
-- [ ] Expose identical repack options in CLI and MAUI. CLI options and MAUI defaults are implemented; MAUI option controls remain.
+- [x] Expose identical repack options in CLI and MAUI.
 - [x] Add deterministic packing golden assertions and boundary/failure tests.
 
 Exit criteria:
@@ -452,7 +452,7 @@ Exit criteria:
 
 - [x] Finalize the Phaser JSON Hash mapping for untrimmed, non-rotated v1 sprites.
 - [x] Implement the exporter strategy and output manifest.
-- [ ] Add CLI and MAUI format selection. CLI selection and a MAUI Phaser action exist; a general MAUI format selector remains.
+- [x] Add CLI and MAUI format selection.
 - [x] Add deterministic Phaser mapping assertions; a real Phaser consumer smoke fixture remains before declaring the phase complete.
 - [x] Document unsupported and custom metadata behavior.
 
@@ -463,7 +463,7 @@ Exit criteria:
 
 ### Phase 6 — Windows release hardening
 
-- [ ] Test large images and define practical memory/dimension limits.
+- [ ] Test large images on representative Windows hardware. Detection now rejects images over configurable 16,384×16,384 or 67,108,864-pixel defaults before allocating component buffers; measured release-machine validation remains.
 - [ ] Add recoverable errors for corrupt PNG, invalid JSON, missing assets, read-only paths, and output collisions.
 - [ ] Add structured logs without leaking user paths in telemetry.
 - [ ] Verify high-DPI input coordinates and rendering.
@@ -490,7 +490,7 @@ Exit criteria:
 - [x] Exporter deterministic mapping tests.
 - [x] Application vertical-slice tests using isolated temporary files and real adapters.
 - [ ] CLI integration tests for arguments, exit codes, stdout/stderr, JSON mode, cancellation, and partial-output cleanup. Deterministic detect-command integration is covered; the remaining error/cancellation matrix is not.
-- [ ] View-model tests for selection, dirty state, undo/redo, validation, and connector edits. Workspace load/save/validation, selection, connector edits, cancellation, repack, and export are covered; dirty state and undo/redo remain.
+- [x] View-model tests for selection, dirty state, undo/redo, validation, region correction, canvas coordinate transforms, connector edits, cancellation, repack, Save As, and export.
 
 ### Manual Windows checks
 
@@ -516,24 +516,24 @@ Latest verified results (2026-08-13):
 
 | Production boundary | Tests | Line coverage | Branch coverage | Line gate |
 | --- | ---: | ---: | ---: | ---: |
-| Domain | 15 | 86.6% | 86.2% | 80% |
-| Application | 6 | 79.7% | 56.2% | 75% |
-| Infrastructure | 14 | 87.2% | 70.0% | 80% |
-| CLI | 10 | 98.1% | 100.0% | 70% |
-| Client workspace view model | 9 | 88.4% | 51.8% | 80% |
+| Domain | 15 | 86.3% | 86.2% | 80% |
+| Application | 8 | 84.2% | 62.5% | 75% |
+| Infrastructure | 15 | 87.5% | 70.1% | 80% |
+| CLI | 11 | 98.3% | 100.0% | 70% |
+| Client workspace view model and picker rules | 17 | 81.8% | 57.5% | 80% |
 
 ## 12. Cross-cutting completion checklist
 
 - [ ] Public types and commands use clear atlas terminology.
-- [ ] All async I/O accepts and propagates cancellation.
-- [ ] All file writes are staged and recoverable.
+- [x] All async I/O accepts and propagates cancellation.
+- [x] All file writes are staged and recoverable.
 - [ ] Errors are structured in Application and rendered by each host.
-- [ ] Same options have the same defaults in native format, CLI, and MAUI.
+- [x] Same options have the same defaults in native format, CLI, and MAUI.
 - [ ] Format changes include migration, fixtures, tests, and documentation.
-- [ ] Exporter limitations are visible to users before export.
-- [ ] No MAUI or image-library types cross into Domain/Application.
-- [ ] No host duplicates core processing logic.
-- [ ] README and product docs are updated in the same change as user-visible behavior.
+- [x] Exporter limitations are documented for users.
+- [x] No MAUI or image-library types cross into Domain/Application.
+- [x] No host duplicates core processing logic.
+- [x] README and product docs are updated in the same change as user-visible behavior.
 
 ## 13. Deferred work
 
@@ -552,11 +552,11 @@ Do not include these in v1 unless a validated user need changes the scope:
 
 ## 14. Decisions to confirm during implementation
 
-- [ ] Validate the SkiaSharp image/canvas choice with a small Windows spike covering memory use, pixel access, coordinate transforms, and MAUI rendering integration.
-- [ ] Decide whether OpenCvSharp's reduction in custom detection code justifies its native deployment and memory cost.
-- [ ] Select or implement the rectangle packer after determinism, maintenance, padding, and licensing evaluation.
-- [ ] Finalize the native extension and JSON Schema URI before declaring format v1 stable.
-- [ ] Decide whether Phaser receives connectors as custom fields or a companion file.
+- [x] Validate SkiaSharp pixel access, coordinate transforms, PNG composition, and MAUI image rendering integration; measured high-end memory validation remains in Phase 6.
+- [x] Reject OpenCvSharp for v1 because the bounded alpha connected-component operation does not justify a second native image stack.
+- [x] Use the isolated, tested `deterministic-shelf-v1` fallback after the evaluated rectangle-packing packages failed the combined maintenance and feature gates.
+- [x] Finalize `.saf.json` and `urn:driftya:sprite-atlas-forge:schema:v1` for native v1.
+- [x] Emit connectors as documented additive custom Phaser frame fields.
 - [ ] Define the metadata-preservation matching rule used when users re-run detection.
 - [ ] Define large-image limits from measured Windows behavior, not arbitrary defaults.
 

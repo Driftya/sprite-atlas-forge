@@ -21,6 +21,7 @@ public static class MauiProgram
 
         builder.Services.AddSpriteAtlasForge();
         builder.Services.AddSingleton<IWorkspaceFilePicker, MauiWorkspaceFilePicker>();
+        builder.Services.AddSingleton<IWorkspaceInteraction, MauiWorkspaceInteraction>();
         builder.Services.AddSingleton<WorkspacePageModel>();
         builder.Services.AddSingleton<MainPage>();
         builder.Services.AddSingleton<AppShell>();

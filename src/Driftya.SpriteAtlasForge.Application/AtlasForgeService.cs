@@ -82,6 +82,34 @@ public sealed class AtlasForgeService : IAtlasForgeService
         CancellationToken cancellationToken = default) =>
         _projectStore.SaveAsync(project, projectPath, cancellationToken);
 
+    public async Task SaveAsAsync(
+        AtlasProject project,
+        string sourceProjectPath,
+        string destinationProjectPath,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        var sourceDirectory = GetProjectDirectory(sourceProjectPath);
+        var destinationDirectory = GetProjectDirectory(destinationProjectPath);
+
+        foreach (var asset in new[] { project.Source.Image, project.Atlas.Image }
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var relativeAssetPath = asset.Replace('/', Path.DirectorySeparatorChar);
+            var sourceAssetPath = Path.GetFullPath(Path.Combine(sourceDirectory, relativeAssetPath));
+            var destinationAssetPath = Path.GetFullPath(Path.Combine(destinationDirectory, relativeAssetPath));
+            if (!string.Equals(sourceAssetPath, destinationAssetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                await _fileSystem.CopyFileAtomicallyAsync(
+                    sourceAssetPath,
+                    destinationAssetPath,
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        await _projectStore.SaveAsync(project, destinationProjectPath, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<AtlasValidationResult> ValidateAsync(
         string projectPath,
         CancellationToken cancellationToken = default)
@@ -104,8 +132,10 @@ public sealed class AtlasForgeService : IAtlasForgeService
         CancellationToken cancellationToken = default)
     {
         var project = await _projectStore.LoadAsync(request.ProjectPath, cancellationToken).ConfigureAwait(false);
-        var sprite = project.GetSprite(request.SpriteId);
-        var updated = project.ReplaceSprite(sprite.AddConnector(new AtlasConnector(request.Name, request.X, request.Y)));
+        var updated = AtlasProjectEditor.AddConnector(
+            project,
+            request.SpriteId,
+            new AtlasConnector(request.Name, request.X, request.Y));
         await _projectStore.SaveAsync(updated, request.ProjectPath, cancellationToken).ConfigureAwait(false);
         return updated;
     }
@@ -115,16 +145,7 @@ public sealed class AtlasForgeService : IAtlasForgeService
         CancellationToken cancellationToken = default)
     {
         var project = await _projectStore.LoadAsync(request.ProjectPath, cancellationToken).ConfigureAwait(false);
-        var sprite = project.GetSprite(request.SpriteId);
-        var connectorCount = sprite.Connectors.Count;
-        var updatedSprite = sprite.RemoveConnector(request.Name);
-
-        if (updatedSprite.Connectors.Count == connectorCount)
-        {
-            throw new KeyNotFoundException($"Connector '{request.Name}' was not found on sprite '{sprite.Id}'.");
-        }
-
-        var updated = project.ReplaceSprite(updatedSprite);
+        var updated = AtlasProjectEditor.RemoveConnector(project, request.SpriteId, request.Name);
         await _projectStore.SaveAsync(updated, request.ProjectPath, cancellationToken).ConfigureAwait(false);
         return updated;
     }
@@ -134,11 +155,11 @@ public sealed class AtlasForgeService : IAtlasForgeService
         CancellationToken cancellationToken = default)
     {
         var project = await _projectStore.LoadAsync(request.ProjectPath, cancellationToken).ConfigureAwait(false);
-        var sprite = project.GetSprite(request.SpriteId);
-        var updatedSprite = sprite.UpdateConnector(
+        var updated = AtlasProjectEditor.UpdateConnector(
+            project,
+            request.SpriteId,
             request.CurrentName,
             new AtlasConnector(request.Name, request.X, request.Y));
-        var updated = project.ReplaceSprite(updatedSprite);
         await _projectStore.SaveAsync(updated, request.ProjectPath, cancellationToken).ConfigureAwait(false);
         return updated;
     }
@@ -148,20 +169,18 @@ public sealed class AtlasForgeService : IAtlasForgeService
         CancellationToken cancellationToken = default)
     {
         var project = await _projectStore.LoadAsync(request.ProjectPath, cancellationToken).ConfigureAwait(false);
-        var sprite = project.GetSprite(request.SpriteId);
-        var renamed = new AtlasSprite(
-            request.NewId,
-            sprite.SourceRegion,
-            sprite.Frame,
-            sprite.Connectors,
-            sprite.Tags,
-            sprite.Properties);
-        var updated = new AtlasProject(
-            project.Name,
-            project.Source,
-            project.Atlas,
-            project.Sprites.Select(candidate =>
-                string.Equals(candidate.Id, sprite.Id, StringComparison.OrdinalIgnoreCase) ? renamed : candidate));
+        var updated = AtlasProjectEditor.RenameSprite(project, request.SpriteId, request.NewId);
+        await _projectStore.SaveAsync(updated, request.ProjectPath, cancellationToken).ConfigureAwait(false);
+        return updated;
+    }
+
+    public async Task<AtlasProject> UpdateSpriteRegionAsync(
+        UpdateSpriteRegionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var project = await _projectStore.LoadAsync(request.ProjectPath, cancellationToken).ConfigureAwait(false);
+        var sourceRegion = new PixelRect(request.X, request.Y, request.Width, request.Height);
+        var updated = AtlasProjectEditor.UpdateSpriteRegion(project, request.SpriteId, sourceRegion);
         await _projectStore.SaveAsync(updated, request.ProjectPath, cancellationToken).ConfigureAwait(false);
         return updated;
     }
@@ -251,5 +270,9 @@ public sealed class AtlasForgeService : IAtlasForgeService
             .ExportAsync(project, request.ProjectPath, request.OutputDirectory, progress, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    private static string GetProjectDirectory(string projectPath) =>
+        Path.GetDirectoryName(Path.GetFullPath(projectPath))
+        ?? throw new ArgumentException("Project path must have a parent directory.", nameof(projectPath));
 
 }

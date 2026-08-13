@@ -106,6 +106,9 @@ public sealed record AtlasSprite
             Properties);
     }
 
+    public AtlasSprite UpdateRegion(PixelRect sourceRegion, PixelRect frame) =>
+        new(Id, sourceRegion, frame, Connectors, Tags, Properties);
+
     public AtlasSprite RemoveConnector(string name) =>
         new(
             Id,

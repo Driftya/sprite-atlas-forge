@@ -25,5 +25,9 @@
              Link="Production\WorkspacePageModel.cs" />
     <Compile Include="..\..\src\Driftya.SpriteAtlasForge.ClientApplication\Services\IWorkspaceFilePicker.cs"
              Link="Production\IWorkspaceFilePicker.cs" />
+    <Compile Include="..\..\src\Driftya.SpriteAtlasForge.ClientApplication\Services\IWorkspaceInteraction.cs"
+             Link="Production\IWorkspaceInteraction.cs" />
+    <Compile Include="..\..\src\Driftya.SpriteAtlasForge.ClientApplication\Services\WorkspaceFileTypeRules.cs"
+             Link="Production\WorkspaceFileTypeRules.cs" />
   </ItemGroup>
 </Project>

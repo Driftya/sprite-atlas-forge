@@ -75,6 +75,25 @@ public sealed class SkiaSpriteDetectorTests
         await Assert.That(exception!.Message).Contains("PNG");
     }
 
+    [Test]
+    public async Task Detection_rejects_corrupt_and_over_limit_PNGs_before_allocating_component_buffers()
+    {
+        using var directory = new TestDirectory();
+        var corruptPath = directory.GetPath("corrupt.png");
+        await File.WriteAllBytesAsync(corruptPath, [1, 2, 3]);
+        var validPath = directory.GetPath("valid.png");
+        WritePng(validPath, _ => { });
+        var detector = new SkiaSpriteDetector();
+
+        var corrupt = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            detector.DetectAsync(corruptPath, new SpriteDetectionOptions()));
+        var overLimit = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            detector.DetectAsync(validPath, new SpriteDetectionOptions { MaximumPixels = 100 }));
+
+        await Assert.That(corrupt!.Message).Contains("could not be decoded");
+        await Assert.That(overLimit!.Message).Contains("exceeds the configured detection limit");
+    }
+
     private static void WritePng(string path, Action<SKBitmap> draw)
     {
         using var bitmap = new SKBitmap(12, 10, SKColorType.Rgba8888, SKAlphaType.Unpremul);

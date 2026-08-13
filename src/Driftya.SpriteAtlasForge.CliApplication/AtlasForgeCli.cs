@@ -54,6 +54,9 @@ public sealed class AtlasForgeCli
         var minimumArea = new Option<int?>("--minimum-area") { Description = "Minimum visible pixels in a component (default: 1)." };
         var mergeDistance = new Option<int?>("--merge-distance") { Description = "Maximum gap for merging disconnected pieces (default: 0)." };
         var sourcePadding = new Option<int?>("--source-padding") { Description = "Padding added around detected regions (default: 0)." };
+        var maximumWidth = new Option<int?>("--max-width") { Description = "Maximum source width (default: 16384)." };
+        var maximumHeight = new Option<int?>("--max-height") { Description = "Maximum source height (default: 16384)." };
+        var maximumPixels = new Option<long?>("--max-pixels") { Description = "Maximum source pixel count (default: 67108864)." };
         var json = JsonOption();
         var command = new Command("detect", "Detect sprites in a PNG and create a native atlas project.");
         command.Arguments.Add(image);
@@ -63,6 +66,9 @@ public sealed class AtlasForgeCli
         command.Options.Add(minimumArea);
         command.Options.Add(mergeDistance);
         command.Options.Add(sourcePadding);
+        command.Options.Add(maximumWidth);
+        command.Options.Add(maximumHeight);
+        command.Options.Add(maximumPixels);
         command.Options.Add(json);
         command.SetAction((parseResult, cancellationToken) => ExecuteAsync(async () =>
         {
@@ -72,17 +78,22 @@ public sealed class AtlasForgeCli
                 throw new ArgumentOutOfRangeException(nameof(alphaThreshold), "Alpha threshold must be between 0 and 255.");
             }
 
+            var options = new SpriteDetectionOptions
+            {
+                AlphaThreshold = (byte)threshold,
+                MinimumArea = parseResult.GetValue(minimumArea) ?? 1,
+                MergeDistance = parseResult.GetValue(mergeDistance) ?? 0,
+                SourcePadding = parseResult.GetValue(sourcePadding) ?? 0,
+                MaximumWidth = parseResult.GetValue(maximumWidth) ?? 16_384,
+                MaximumHeight = parseResult.GetValue(maximumHeight) ?? 16_384,
+                MaximumPixels = parseResult.GetValue(maximumPixels) ?? 67_108_864,
+            };
+            options.Validate();
             var request = new DetectAtlasRequest(
                 parseResult.GetRequiredValue(image),
                 parseResult.GetRequiredValue(output),
                 parseResult.GetValue(name),
-                new SpriteDetectionOptions
-                {
-                    AlphaThreshold = (byte)threshold,
-                    MinimumArea = parseResult.GetValue(minimumArea) ?? 1,
-                    MergeDistance = parseResult.GetValue(mergeDistance) ?? 0,
-                    SourcePadding = parseResult.GetValue(sourcePadding) ?? 0,
-                });
+                options);
             var project = await _service.DetectAsync(request, cancellationToken: cancellationToken);
             WriteResult(
                 new
@@ -268,7 +279,44 @@ public sealed class AtlasForgeCli
             return CliExitCode.Success;
         }));
         spriteRoot.Subcommands.Add(rename);
+        spriteRoot.Subcommands.Add(CreateSpriteRegionCommand());
         return spriteRoot;
+    }
+
+    private Command CreateSpriteRegionCommand()
+    {
+        var project = ProjectArgument();
+        var sprite = RequiredOption("--sprite", "Sprite ID.");
+        var x = new Option<int>("--x") { Description = "Source X coordinate.", Required = true };
+        var y = new Option<int>("--y") { Description = "Source Y coordinate.", Required = true };
+        var width = new Option<int>("--width") { Description = "Region width.", Required = true };
+        var height = new Option<int>("--height") { Description = "Region height.", Required = true };
+        var json = JsonOption();
+        var command = new Command("region", "Update a sprite's source region.");
+        command.Arguments.Add(project);
+        command.Options.Add(sprite);
+        command.Options.Add(x);
+        command.Options.Add(y);
+        command.Options.Add(width);
+        command.Options.Add(height);
+        command.Options.Add(json);
+        command.SetAction((parseResult, cancellationToken) => ExecuteAsync(async () =>
+        {
+            var request = new UpdateSpriteRegionRequest(
+                parseResult.GetRequiredValue(project),
+                parseResult.GetRequiredValue(sprite),
+                parseResult.GetValue(x),
+                parseResult.GetValue(y),
+                parseResult.GetValue(width),
+                parseResult.GetValue(height));
+            await _service.UpdateSpriteRegionAsync(request, cancellationToken);
+            WriteResult(
+                new { sprite = request.SpriteId, request.X, request.Y, request.Width, request.Height },
+                parseResult.GetValue(json),
+                $"Updated region for '{request.SpriteId}'.");
+            return CliExitCode.Success;
+        }));
+        return command;
     }
 
     private Command CreateExportCommand()
@@ -370,7 +418,7 @@ public sealed class AtlasForgeCli
             Console.Error.WriteLine(exception.Message);
             return (int)CliExitCode.InvalidProject;
         }
-        catch (IOException exception)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             Console.Error.WriteLine(exception.Message);
             return (int)CliExitCode.IoFailure;

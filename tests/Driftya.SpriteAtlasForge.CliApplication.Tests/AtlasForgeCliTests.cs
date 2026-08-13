@@ -37,7 +37,8 @@ public sealed class AtlasForgeCliTests
         var exitCode = await root.Parse([
             "detect", "source.png", "--output", "project.saf.json", "--name", "modules",
             "--alpha-threshold", "12", "--minimum-area", "3", "--merge-distance", "2",
-            "--source-padding", "1", "--json",
+            "--source-padding", "1", "--max-width", "2048", "--max-height", "1024",
+            "--max-pixels", "1000000", "--json",
         ]).InvokeAsync();
 
         await Assert.That(exitCode).IsEqualTo(0);
@@ -47,6 +48,9 @@ public sealed class AtlasForgeCliTests
         await Assert.That(service.LastDetectRequest.Options.MinimumArea).IsEqualTo(3);
         await Assert.That(service.LastDetectRequest.Options.MergeDistance).IsEqualTo(2);
         await Assert.That(service.LastDetectRequest.Options.SourcePadding).IsEqualTo(1);
+        await Assert.That(service.LastDetectRequest.Options.MaximumWidth).IsEqualTo(2048);
+        await Assert.That(service.LastDetectRequest.Options.MaximumHeight).IsEqualTo(1024);
+        await Assert.That(service.LastDetectRequest.Options.MaximumPixels).IsEqualTo(1_000_000);
     }
 
     [Test]
@@ -58,6 +62,10 @@ public sealed class AtlasForgeCliTests
         var rename = await root.Parse([
             "sprite", "rename", "project.saf.json", "--sprite", "module", "--new-id", "habitat",
         ]).InvokeAsync();
+        var region = await root.Parse([
+            "sprite", "region", "project.saf.json", "--sprite", "module",
+            "--x", "1", "--y", "2", "--width", "6", "--height", "5", "--json",
+        ]).InvokeAsync();
         var repack = await root.Parse([
             "repack", "project.saf.json", "--output", "repacked", "--padding", "4",
             "--max-width", "128", "--max-height", "64", "--no-power-of-two", "--json",
@@ -68,6 +76,9 @@ public sealed class AtlasForgeCliTests
 
         await Assert.That(rename).IsEqualTo(0);
         await Assert.That(service.LastRenameRequest!.NewId).IsEqualTo("habitat");
+        await Assert.That(region).IsEqualTo(0);
+        await Assert.That(service.LastRegionRequest!.Width).IsEqualTo(6);
+        await Assert.That(service.LastRegionRequest.Height).IsEqualTo(5);
         await Assert.That(repack).IsEqualTo(0);
         await Assert.That(service.LastRepackRequest!.Options!.Padding).IsEqualTo(4);
         await Assert.That(service.LastRepackRequest.Options.PowerOfTwo).IsFalse();
@@ -78,6 +89,7 @@ public sealed class AtlasForgeCliTests
     [Test]
     [Arguments(typeof(AtlasProjectFormatException), 3)]
     [Arguments(typeof(IOException), 4)]
+    [Arguments(typeof(UnauthorizedAccessException), 4)]
     [Arguments(typeof(OperationCanceledException), 5)]
     [Arguments(typeof(InvalidOperationException), 6)]
     public async Task Processing_exceptions_map_to_stable_exit_codes(Type exceptionType, int expectedExitCode)
@@ -107,9 +119,13 @@ public sealed class AtlasForgeCliTests
         var detect = await root.Parse([
             "detect", "source.png", "--output", "project.saf.json", "--alpha-threshold", "256",
         ]).InvokeAsync();
+        var invalidLimit = await root.Parse([
+            "detect", "source.png", "--output", "project.saf.json", "--max-pixels", "0",
+        ]).InvokeAsync();
 
         await Assert.That(validate).IsEqualTo(3);
         await Assert.That(detect).IsEqualTo(3);
+        await Assert.That(invalidLimit).IsEqualTo(3);
     }
 
     private static Exception CreateException(Type exceptionType)
@@ -122,6 +138,11 @@ public sealed class AtlasForgeCliTests
         if (exceptionType == typeof(IOException))
         {
             return new IOException("I/O failed.");
+        }
+
+        if (exceptionType == typeof(UnauthorizedAccessException))
+        {
+            return new UnauthorizedAccessException("Access denied.");
         }
 
         if (exceptionType == typeof(OperationCanceledException))
@@ -144,6 +165,7 @@ public sealed class AtlasForgeCliTests
         public AtlasValidationResult ValidationResult { get; init; } = AtlasValidationResult.Valid;
         public DetectAtlasRequest? LastDetectRequest { get; private set; }
         public RenameSpriteRequest? LastRenameRequest { get; private set; }
+        public UpdateSpriteRegionRequest? LastRegionRequest { get; private set; }
         public RepackAtlasRequest? LastRepackRequest { get; private set; }
         public ExportAtlasRequest? LastExportRequest { get; private set; }
         public int ValidateCount { get; private set; }
@@ -165,6 +187,12 @@ public sealed class AtlasForgeCliTests
         public Task SaveAsync(
             AtlasProject project,
             string projectPath,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task SaveAsAsync(
+            AtlasProject project,
+            string sourceProjectPath,
+            string destinationProjectPath,
             CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public Task<AtlasValidationResult> ValidateAsync(
@@ -192,6 +220,14 @@ public sealed class AtlasForgeCliTests
             CancellationToken cancellationToken = default)
         {
             LastRenameRequest = request;
+            return Task.FromResult(Project);
+        }
+
+        public Task<AtlasProject> UpdateSpriteRegionAsync(
+            UpdateSpriteRegionRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            LastRegionRequest = request;
             return Task.FromResult(Project);
         }
 

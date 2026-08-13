@@ -15,8 +15,9 @@ public sealed class SkiaAtlasImageComposer : IAtlasImageComposer
         CancellationToken cancellationToken = default)
     {
         var sourceBytes = await File.ReadAllBytesAsync(sourceImagePath, cancellationToken).ConfigureAwait(false);
-        using var sourceBitmap = SKBitmap.Decode(sourceBytes)
-            ?? throw new InvalidDataException("The source PNG could not be decoded for repacking.");
+        using var sourceBitmap = SkiaPngDecoder.Decode(
+            sourceBytes,
+            "The source PNG could not be decoded for repacking.");
         using var atlasBitmap = new SKBitmap(
             packing.Size.Width,
             packing.Size.Height,

@@ -462,4 +462,4 @@ My vote: AtlasForge. It also leaves room for future Unity, Godot, Phaser, generi
 
 ## Current implementation note (2026-08-13)
 
-The Windows-first MAUI editor and CLI now share Application use cases for named connector creation, exact numeric movement, rename, and deletion. Connector coordinates remain sprite-local integers and are preserved by native save/load and untrimmed repacking. Canvas click/drag authoring is still planned; the numeric editor is the accessible fallback and current implemented path.
+The Windows-first MAUI editor and CLI share Application rules for sprite-region correction and named connector creation, movement, rename, and deletion. Connector coordinates remain sprite-local integers and are preserved by native save/load and untrimmed repacking. The MAUI canvas supports click placement and drag movement at any zoom level, while exact numeric inputs remain the accessible fallback. Editor changes are tracked as dirty, support undo/redo, and prompt before being discarded.
