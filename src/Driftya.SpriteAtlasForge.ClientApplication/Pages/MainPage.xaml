@@ -83,12 +83,14 @@
                             VerticalTextAlignment="Center" />
                     </Grid>
                     <ScrollView
+                        x:Name="AtlasScrollView"
                         Grid.Row="1"
                         Orientation="Both"
                         HorizontalScrollBarVisibility="Always"
                         VerticalScrollBarVisibility="Always">
                         <Grid
                             x:Name="AtlasCanvas"
+                            SizeChanged="OnAtlasCanvasSizeChanged"
                             HeightRequest="{Binding CanvasImageHeight}"
                             HorizontalOptions="Start"
                             VerticalOptions="Start"
@@ -96,7 +98,9 @@
                             <Image Aspect="Fill" Source="{Binding CurrentImagePath}" />
                             <controls:SpriteOverlayView
                                 CanResize="{Binding CanResizeSelectedSprite}"
+                                CanvasPan="OnOverlayCanvasPan"
                                 CanvasTapped="OnOverlayCanvasTapped"
+                                CanvasZoomRequested="OnOverlayCanvasZoomRequested"
                                 HeightRequest="{Binding CanvasImageHeight}"
                                 HorizontalOptions="Fill"
                                 Overlays="{Binding SpriteOverlays}"

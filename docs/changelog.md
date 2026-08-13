@@ -24,4 +24,8 @@
 - Preserved small nearby engine/plume fragments by attaching below-minimum components only when exactly one qualifying sprite is nearby, without allowing them to bridge two sprites.
 - Fixed canvas sprite clicks being swallowed by the full-size connector layer while retaining draggable connector controls.
 - Added a right-sidebar action to save the selected displayed sprite frame as a lossless PNG crop.
+- Added zoom-stable snapping to image and overlapping sprite edges when resizing, including cyan alignment guides.
+- Added right-button drag panning with coalesced scroll updates for the zoomed atlas canvas.
+- Added Delete-key removal for the selected sprite while preserving Delete inside text inputs.
+- Added snapping back to a sprite's own original edge and right-button wheel zoom anchored at the pointer.
 - Expanded Application, CLI, and Client regression coverage.

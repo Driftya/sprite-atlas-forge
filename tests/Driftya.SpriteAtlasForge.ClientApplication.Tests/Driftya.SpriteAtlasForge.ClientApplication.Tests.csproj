@@ -23,6 +23,8 @@
     <!-- Compile the platform-neutral view model source without bootstrapping the WinUI executable host. -->
     <Compile Include="..\..\src\Driftya.SpriteAtlasForge.ClientApplication\PageModels\WorkspacePageModel.cs"
              Link="Production\WorkspacePageModel.cs" />
+    <Compile Include="..\..\src\Driftya.SpriteAtlasForge.ClientApplication\PageModels\SpriteResizeSnapper.cs"
+             Link="Production\SpriteResizeSnapper.cs" />
     <Compile Include="..\..\src\Driftya.SpriteAtlasForge.ClientApplication\Services\IWorkspaceFilePicker.cs"
              Link="Production\IWorkspaceFilePicker.cs" />
     <Compile Include="..\..\src\Driftya.SpriteAtlasForge.ClientApplication\Services\IWorkspaceInteraction.cs"

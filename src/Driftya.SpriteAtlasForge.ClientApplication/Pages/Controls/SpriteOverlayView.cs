@@ -34,16 +34,50 @@ public sealed class SpriteRegionResizedEventArgs(
     public int Height { get; } = height;
 }
 
+public enum CanvasPanPhase
+{
+    Started,
+    Changed,
+    Completed,
+}
+
+public sealed class CanvasPanEventArgs(CanvasPanPhase phase, double totalX, double totalY) : EventArgs
+{
+    public CanvasPanPhase Phase { get; } = phase;
+
+    public double TotalX { get; } = totalX;
+
+    public double TotalY { get; } = totalY;
+}
+
+public sealed class CanvasZoomRequestedEventArgs(double x, double y, int wheelDelta) : EventArgs
+{
+    public double X { get; } = x;
+
+    public double Y { get; } = y;
+
+    public int WheelDelta { get; } = wheelDelta;
+}
+
 public sealed class SpriteOverlayView : GraphicsView, IDrawable
 {
     private const float HandleSize = 7;
     private const float HitTolerance = 9;
+    private const double SnapDistance = 8;
     private SpriteCanvasOverlay? _pressedSprite;
     private SpriteCanvasOverlay? _resizedSprite;
-    private ResizeHandle _resizeHandle;
-    private PixelBounds? _previewBounds;
+    private CanvasResizeHandle _resizeHandle;
+    private CanvasPixelBounds? _previewBounds;
+    private int? _verticalSnapGuide;
+    private int? _horizontalSnapGuide;
     private PointF _pressPoint;
     private bool _moved;
+    private bool _suppressGraphicsInteraction;
+#if WINDOWS
+    private Microsoft.UI.Xaml.UIElement? _platformView;
+    private uint? _rightPanPointerId;
+    private Windows.Foundation.Point _rightPanOrigin;
+#endif
 
     public static readonly BindableProperty OverlaysProperty = BindableProperty.Create(
         nameof(Overlays),
@@ -92,6 +126,8 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         DragInteraction += OnDragInteraction;
         EndInteraction += OnEndInteraction;
         CancelInteraction += OnCancelInteraction;
+        HandlerChanged += OnPlatformHandlerChanged;
+        HandlerChanging += OnPlatformHandlerChanging;
     }
 
     public event EventHandler<SpriteSelectedEventArgs>? SpriteSelected;
@@ -99,6 +135,10 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
     public event EventHandler<CanvasTappedEventArgs>? CanvasTapped;
 
     public event EventHandler<SpriteRegionResizedEventArgs>? SpriteRegionResized;
+
+    public event EventHandler<CanvasPanEventArgs>? CanvasPan;
+
+    public event EventHandler<CanvasZoomRequestedEventArgs>? CanvasZoomRequested;
 
     public IReadOnlyList<SpriteCanvasOverlay>? Overlays
     {
@@ -144,9 +184,9 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
             var bounds = _previewBounds is { } preview &&
                          string.Equals(overlay.SpriteId, _resizedSprite?.SpriteId, StringComparison.OrdinalIgnoreCase)
                 ? preview
-                : PixelBounds.From(overlay);
+                : CanvasPixelBounds.From(overlay);
             var selected = string.Equals(overlay.SpriteId, SelectedSpriteId, StringComparison.OrdinalIgnoreCase);
-            var displayed = bounds.Scale(scale);
+            var displayed = ScaleBounds(bounds, scale);
 
             canvas.StrokeColor = selected ? Color.FromArgb("#FFD166") : Color.FromArgb("#77E09C");
             canvas.StrokeSize = selected ? 2 : 1;
@@ -180,13 +220,27 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
                 }
             }
         }
+
+        canvas.StrokeColor = Color.FromArgb("#42D9FF");
+        canvas.StrokeSize = 1;
+        if (_verticalSnapGuide is { } verticalGuide)
+        {
+            var x = (float)(verticalGuide * scale);
+            canvas.DrawLine(x, 0, x, (float)(SourceHeight * scale));
+        }
+
+        if (_horizontalSnapGuide is { } horizontalGuide)
+        {
+            var y = (float)(horizontalGuide * scale);
+            canvas.DrawLine(0, y, (float)(SourceWidth * scale), y);
+        }
     }
 
     private double EffectiveScale => Math.Max(0.01, ZoomScale);
 
     private void OnStartInteraction(object? sender, TouchEventArgs args)
     {
-        if (args.Touches.Length == 0)
+        if (_suppressGraphicsInteraction || args.Touches.Length == 0)
         {
             return;
         }
@@ -195,18 +249,20 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         _moved = false;
         _pressedSprite = null;
         _resizedSprite = null;
-        _resizeHandle = ResizeHandle.None;
+        _resizeHandle = CanvasResizeHandle.None;
         _previewBounds = null;
+        _verticalSnapGuide = null;
+        _horizontalSnapGuide = null;
 
         var selected = FindOverlay(SelectedSpriteId);
         if (CanResize && selected is not null)
         {
-            var handle = HitTestHandle(PixelBounds.From(selected).Scale(EffectiveScale), _pressPoint);
-            if (handle != ResizeHandle.None)
+            var handle = HitTestHandle(ScaleBounds(CanvasPixelBounds.From(selected), EffectiveScale), _pressPoint);
+            if (handle != CanvasResizeHandle.None)
             {
                 _resizedSprite = selected;
                 _resizeHandle = handle;
-                _previewBounds = PixelBounds.From(selected);
+                _previewBounds = CanvasPixelBounds.From(selected);
                 Invalidate();
                 return;
             }
@@ -214,10 +270,6 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
 
         var sourcePoint = ToSourcePoint(_pressPoint);
         _pressedSprite = HitTestSprite(sourcePoint);
-        if (_pressedSprite is not null)
-        {
-            SpriteSelected?.Invoke(this, new SpriteSelectedEventArgs(_pressedSprite.SpriteId));
-        }
     }
 
     private void OnDragInteraction(object? sender, TouchEventArgs args)
@@ -229,26 +281,40 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
 
         var point = args.Touches[0];
         _moved |= Math.Abs(point.X - _pressPoint.X) > 2 || Math.Abs(point.Y - _pressPoint.Y) > 2;
-        if (_resizedSprite is null || _resizeHandle == ResizeHandle.None)
+        if (_resizedSprite is null || _resizeHandle == CanvasResizeHandle.None)
         {
             return;
         }
 
-        _previewBounds = Resize(
-            PixelBounds.From(_resizedSprite),
+        var preview = SpriteResizeSnapper.Resize(
+            CanvasPixelBounds.From(_resizedSprite),
             _resizeHandle,
-            ToSourcePoint(point),
+            ToSourcePoint(point).X,
+            ToSourcePoint(point).Y,
             Math.Max(1, (int)Math.Round(SourceWidth)),
-            Math.Max(1, (int)Math.Round(SourceHeight)));
+            Math.Max(1, (int)Math.Round(SourceHeight)),
+            Overlays ?? [],
+            _resizedSprite.SpriteId,
+            SnapDistance / EffectiveScale);
+        _previewBounds = preview.Bounds;
+        _verticalSnapGuide = preview.VerticalGuide;
+        _horizontalSnapGuide = preview.HorizontalGuide;
         Invalidate();
     }
 
     private void OnEndInteraction(object? sender, TouchEventArgs args)
     {
+        if (_suppressGraphicsInteraction)
+        {
+            _suppressGraphicsInteraction = false;
+            ResetInteraction();
+            return;
+        }
+
         var releasePoint = args.Touches.Length > 0 ? args.Touches[0] : _pressPoint;
         if (_resizedSprite is not null && _previewBounds is { } resized)
         {
-            var original = PixelBounds.From(_resizedSprite);
+            var original = CanvasPixelBounds.From(_resizedSprite);
             if (_moved && resized != original)
             {
                 SpriteRegionResized?.Invoke(this, new SpriteRegionResizedEventArgs(
@@ -261,8 +327,15 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         }
         else if (!_moved)
         {
-            var point = ToSourcePoint(releasePoint);
-            CanvasTapped?.Invoke(this, new CanvasTappedEventArgs(point.X, point.Y));
+            if (_pressedSprite is not null)
+            {
+                SpriteSelected?.Invoke(this, new SpriteSelectedEventArgs(_pressedSprite.SpriteId));
+            }
+            else
+            {
+                var point = ToSourcePoint(releasePoint);
+                CanvasTapped?.Invoke(this, new CanvasTappedEventArgs(point.X, point.Y));
+            }
         }
 
         ResetInteraction();
@@ -274,14 +347,16 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
     {
         _pressedSprite = null;
         _resizedSprite = null;
-        _resizeHandle = ResizeHandle.None;
+        _resizeHandle = CanvasResizeHandle.None;
         _previewBounds = null;
+        _verticalSnapGuide = null;
+        _horizontalSnapGuide = null;
         _moved = false;
         Invalidate();
     }
 
     private SpriteCanvasOverlay? HitTestSprite(PointF point) => (Overlays ?? [])
-        .Where(overlay => PixelBounds.From(overlay).Contains(point))
+        .Where(overlay => Contains(CanvasPixelBounds.From(overlay), point))
         .OrderBy(overlay => overlay.Width * overlay.Height)
         .FirstOrDefault();
 
@@ -295,19 +370,19 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         (float)(point.X / EffectiveScale),
         (float)(point.Y / EffectiveScale));
 
-    private static ResizeHandle HitTestHandle(RectF bounds, PointF point)
+    private static CanvasResizeHandle HitTestHandle(RectF bounds, PointF point)
     {
         var points = HandlePoints(bounds);
         var handles = new[]
         {
-            ResizeHandle.TopLeft,
-            ResizeHandle.Top,
-            ResizeHandle.TopRight,
-            ResizeHandle.Right,
-            ResizeHandle.BottomRight,
-            ResizeHandle.Bottom,
-            ResizeHandle.BottomLeft,
-            ResizeHandle.Left,
+            CanvasResizeHandle.TopLeft,
+            CanvasResizeHandle.Top,
+            CanvasResizeHandle.TopRight,
+            CanvasResizeHandle.Right,
+            CanvasResizeHandle.BottomRight,
+            CanvasResizeHandle.Bottom,
+            CanvasResizeHandle.BottomLeft,
+            CanvasResizeHandle.Left,
         };
 
         for (var index = 0; index < points.Length; index++)
@@ -318,7 +393,7 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
             }
         }
 
-        return ResizeHandle.None;
+        return CanvasResizeHandle.None;
     }
 
     private static PointF[] HandlePoints(RectF bounds) =>
@@ -340,42 +415,14 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         return MathF.Sqrt((x * x) + (y * y));
     }
 
-    private static PixelBounds Resize(
-        PixelBounds original,
-        ResizeHandle handle,
-        PointF point,
-        int sourceWidth,
-        int sourceHeight)
-    {
-        var left = original.X;
-        var top = original.Y;
-        var right = original.Right;
-        var bottom = original.Bottom;
-        var x = (int)Math.Round(point.X);
-        var y = (int)Math.Round(point.Y);
+    private static RectF ScaleBounds(CanvasPixelBounds bounds, double scale) => new(
+        (float)(bounds.X * scale),
+        (float)(bounds.Y * scale),
+        (float)(bounds.Width * scale),
+        (float)(bounds.Height * scale));
 
-        if (handle.HasFlag(ResizeHandle.Left))
-        {
-            left = Math.Clamp(x, 0, right - 1);
-        }
-
-        if (handle.HasFlag(ResizeHandle.Right))
-        {
-            right = Math.Clamp(x, left + 1, sourceWidth);
-        }
-
-        if (handle.HasFlag(ResizeHandle.Top))
-        {
-            top = Math.Clamp(y, 0, bottom - 1);
-        }
-
-        if (handle.HasFlag(ResizeHandle.Bottom))
-        {
-            bottom = Math.Clamp(y, top + 1, sourceHeight);
-        }
-
-        return new PixelBounds(left, top, right - left, bottom - top);
-    }
+    private static bool Contains(CanvasPixelBounds bounds, PointF point) =>
+        point.X >= bounds.X && point.X <= bounds.Right && point.Y >= bounds.Y && point.Y <= bounds.Bottom;
 
     private static void OnOverlaysChanged(BindableObject bindable, object? oldValue, object? newValue)
     {
@@ -398,39 +445,134 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
 
     private void OnOverlayCollectionChanged(object? sender, NotifyCollectionChangedEventArgs args) => Invalidate();
 
-    [Flags]
-    private enum ResizeHandle
+    private void OnPlatformHandlerChanged(object? sender, EventArgs args)
     {
-        None = 0,
-        Left = 1,
-        Top = 2,
-        Right = 4,
-        Bottom = 8,
-        TopLeft = Top | Left,
-        TopRight = Top | Right,
-        BottomRight = Bottom | Right,
-        BottomLeft = Bottom | Left,
+#if WINDOWS
+        AttachPlatformPointerHandlers();
+#endif
     }
 
-    private readonly record struct PixelBounds(int X, int Y, int Width, int Height)
+    private void OnPlatformHandlerChanging(object? sender, HandlerChangingEventArgs args)
     {
-        public int Right => X + Width;
-
-        public int Bottom => Y + Height;
-
-        public static PixelBounds From(SpriteCanvasOverlay overlay) => new(
-            (int)Math.Round(overlay.X),
-            (int)Math.Round(overlay.Y),
-            Math.Max(1, (int)Math.Round(overlay.Width)),
-            Math.Max(1, (int)Math.Round(overlay.Height)));
-
-        public RectF Scale(double scale) => new(
-            (float)(X * scale),
-            (float)(Y * scale),
-            (float)(Width * scale),
-            (float)(Height * scale));
-
-        public bool Contains(PointF point) =>
-            point.X >= X && point.X <= Right && point.Y >= Y && point.Y <= Bottom;
+#if WINDOWS
+        DetachPlatformPointerHandlers();
+#endif
     }
+
+#if WINDOWS
+    private void AttachPlatformPointerHandlers()
+    {
+        DetachPlatformPointerHandlers();
+        if (Handler?.PlatformView is not Microsoft.UI.Xaml.UIElement platformView)
+        {
+            return;
+        }
+
+        _platformView = platformView;
+        platformView.PointerPressed += OnPlatformPointerPressed;
+        platformView.PointerMoved += OnPlatformPointerMoved;
+        platformView.PointerReleased += OnPlatformPointerReleased;
+        platformView.PointerCanceled += OnPlatformPointerCanceled;
+        platformView.PointerCaptureLost += OnPlatformPointerCaptureLost;
+        platformView.PointerWheelChanged += OnPlatformPointerWheelChanged;
+    }
+
+    private void DetachPlatformPointerHandlers()
+    {
+        if (_platformView is null)
+        {
+            return;
+        }
+
+        _platformView.PointerPressed -= OnPlatformPointerPressed;
+        _platformView.PointerMoved -= OnPlatformPointerMoved;
+        _platformView.PointerReleased -= OnPlatformPointerReleased;
+        _platformView.PointerCanceled -= OnPlatformPointerCanceled;
+        _platformView.PointerCaptureLost -= OnPlatformPointerCaptureLost;
+        _platformView.PointerWheelChanged -= OnPlatformPointerWheelChanged;
+        _platformView = null;
+        _rightPanPointerId = null;
+    }
+
+    private void OnPlatformPointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args)
+    {
+        if (_platformView is null || !args.GetCurrentPoint(_platformView).Properties.IsRightButtonPressed)
+        {
+            return;
+        }
+
+        _rightPanPointerId = args.Pointer.PointerId;
+        _rightPanOrigin = args.GetCurrentPoint(null).Position;
+        _suppressGraphicsInteraction = true;
+        _platformView.CapturePointer(args.Pointer);
+        CanvasPan?.Invoke(this, new CanvasPanEventArgs(CanvasPanPhase.Started, 0, 0));
+        args.Handled = true;
+    }
+
+    private void OnPlatformPointerMoved(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args)
+    {
+        if (_platformView is null || _rightPanPointerId != args.Pointer.PointerId)
+        {
+            return;
+        }
+
+        var position = args.GetCurrentPoint(null).Position;
+        CanvasPan?.Invoke(this, new CanvasPanEventArgs(
+            CanvasPanPhase.Changed,
+            position.X - _rightPanOrigin.X,
+            position.Y - _rightPanOrigin.Y));
+        args.Handled = true;
+    }
+
+    private void OnPlatformPointerWheelChanged(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args)
+    {
+        if (_platformView is null)
+        {
+            return;
+        }
+
+        var point = args.GetCurrentPoint(_platformView);
+        if (!point.Properties.IsRightButtonPressed || point.Properties.MouseWheelDelta == 0)
+        {
+            return;
+        }
+
+        _rightPanOrigin = args.GetCurrentPoint(null).Position;
+        CanvasPan?.Invoke(this, new CanvasPanEventArgs(CanvasPanPhase.Started, 0, 0));
+        CanvasZoomRequested?.Invoke(this, new CanvasZoomRequestedEventArgs(
+            point.Position.X,
+            point.Position.Y,
+            point.Properties.MouseWheelDelta));
+        args.Handled = true;
+    }
+
+    private void OnPlatformPointerReleased(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args) =>
+        CompletePlatformPan(args, true);
+
+    private void OnPlatformPointerCanceled(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args) =>
+        CompletePlatformPan(args, false);
+
+    private void OnPlatformPointerCaptureLost(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args) =>
+        CompletePlatformPan(args, false);
+
+    private void CompletePlatformPan(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args, bool includeFinalPosition)
+    {
+        if (_platformView is null || _rightPanPointerId != args.Pointer.PointerId)
+        {
+            return;
+        }
+
+        var position = includeFinalPosition
+            ? args.GetCurrentPoint(null).Position
+            : _rightPanOrigin;
+        _rightPanPointerId = null;
+        _platformView.ReleasePointerCapture(args.Pointer);
+        CanvasPan?.Invoke(this, new CanvasPanEventArgs(
+            CanvasPanPhase.Completed,
+            position.X - _rightPanOrigin.X,
+            position.Y - _rightPanOrigin.Y));
+        Dispatcher.Dispatch(() => _suppressGraphicsInteraction = false);
+        args.Handled = true;
+    }
+#endif
 }
