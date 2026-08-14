@@ -558,7 +558,15 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
     private static void OnSelectedSpriteChanged(BindableObject bindable, object? oldValue, object? newValue)
     {
         var view = (SpriteOverlayView)bindable;
-        view._selectedBorder = CanvasResizeHandle.None;
+        // Selection bindings can briefly pass through null while an edit replaces
+        // the immutable sprite instance. Keep the active border in that case so
+        // repeated keyboard nudges continue operating on the same border.
+        if (oldValue is string oldId && newValue is string newId &&
+            !string.Equals(oldId, newId, StringComparison.OrdinalIgnoreCase))
+        {
+            view._selectedBorder = CanvasResizeHandle.None;
+        }
+
         view.Invalidate();
     }
 

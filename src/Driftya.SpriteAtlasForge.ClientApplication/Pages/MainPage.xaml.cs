@@ -4,11 +4,39 @@ using Controls;
 
 public partial class MainPage : ContentPage
 {
+    private bool _approvalChangePending;
+
     private async void OnSpriteApprovedChanged(object? sender, CheckedChangedEventArgs args)
     {
-        if (BindingContext is WorkspacePageModel { IsBusy: false } model)
+        if (_approvalChangePending ||
+            BindingContext is not WorkspacePageModel { IsBusy: false } model ||
+            model.SelectedSprite is null ||
+            model.SelectedSprite.IsApproved == args.Value)
         {
+            return;
+        }
+
+        var selectedSpriteId = model.SelectedSprite.Id;
+        _approvalChangePending = true;
+        try
+        {
+            // The edit replaces the selected immutable sprite and refreshes bound
+            // collections. Let the native CheckedChanged callback unwind before
+            // doing that work so WinUI does not re-enter the CheckBox update.
+            await Task.Yield();
+            if (!string.Equals(
+                    model.SelectedSprite?.Id,
+                    selectedSpriteId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
             await model.SetSelectedSpriteApprovedAsync(args.Value);
+        }
+        finally
+        {
+            _approvalChangePending = false;
         }
     }
     private double _canvasPanStartX;
@@ -23,6 +51,7 @@ public partial class MainPage : ContentPage
 #if WINDOWS
     private Microsoft.UI.Xaml.UIElement? _platformView;
     private Microsoft.UI.Xaml.Input.KeyboardAccelerator? _deleteAccelerator;
+    private readonly List<Microsoft.UI.Xaml.Input.KeyboardAccelerator> _nudgeAccelerators = [];
 #endif
 
     public MainPage(WorkspacePageModel model)
@@ -175,13 +204,26 @@ public partial class MainPage : ContentPage
         }
 
         _platformView = platformView;
-        platformView.KeyDown += OnPageKeyDown;
         _deleteAccelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator
         {
             Key = Windows.System.VirtualKey.Delete,
         };
         _deleteAccelerator.Invoked += OnDeleteAcceleratorInvoked;
         platformView.KeyboardAccelerators.Add(_deleteAccelerator);
+
+        foreach (var key in new[]
+                 {
+                     Windows.System.VirtualKey.Left,
+                     Windows.System.VirtualKey.Right,
+                     Windows.System.VirtualKey.Up,
+                     Windows.System.VirtualKey.Down,
+                 })
+        {
+            var accelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = key };
+            accelerator.Invoked += OnNudgeAcceleratorInvoked;
+            _nudgeAccelerators.Add(accelerator);
+            platformView.KeyboardAccelerators.Add(accelerator);
+        }
 #endif
     }
 
@@ -198,10 +240,7 @@ public partial class MainPage : ContentPage
         Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
     {
         if (_platformView?.XamlRoot is null ||
-            Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(_platformView.XamlRoot) is
-                Microsoft.UI.Xaml.Controls.TextBox or
-                Microsoft.UI.Xaml.Controls.PasswordBox or
-                Microsoft.UI.Xaml.Controls.RichEditBox ||
+            IsTextInputFocused() ||
             BindingContext is not WorkspacePageModel model ||
             !model.DeleteSelectedSpriteCommand.CanExecute(null))
         {
@@ -211,6 +250,25 @@ public partial class MainPage : ContentPage
         args.Handled = true;
         await model.DeleteSelectedSpriteCommand.ExecuteAsync(null);
     }
+
+    private void OnNudgeAcceleratorInvoked(
+        Microsoft.UI.Xaml.Input.KeyboardAccelerator sender,
+        Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
+    {
+        if (_platformView?.XamlRoot is not null &&
+            !IsTextInputFocused() &&
+            OverlayView.TryNudgeSelectedBorder(sender.Key))
+        {
+            args.Handled = true;
+        }
+    }
+
+    private bool IsTextInputFocused() =>
+        _platformView?.XamlRoot is not null &&
+        Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(_platformView.XamlRoot) is
+            Microsoft.UI.Xaml.Controls.TextBox or
+            Microsoft.UI.Xaml.Controls.PasswordBox or
+            Microsoft.UI.Xaml.Controls.RichEditBox;
 
     private void DetachPlatformKeyboardHandlers()
     {
@@ -222,19 +280,16 @@ public partial class MainPage : ContentPage
 
         if (_platformView is not null)
         {
-            _platformView.KeyDown -= OnPageKeyDown;
+            foreach (var accelerator in _nudgeAccelerators)
+            {
+                _platformView.KeyboardAccelerators.Remove(accelerator);
+                accelerator.Invoked -= OnNudgeAcceleratorInvoked;
+            }
         }
 
+        _nudgeAccelerators.Clear();
         _platformView = null;
         _deleteAccelerator = null;
-    }
-
-    private void OnPageKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs args)
-    {
-        if (OverlayView.TryNudgeSelectedBorder(args.Key))
-        {
-            args.Handled = true;
-        }
     }
 #endif
 

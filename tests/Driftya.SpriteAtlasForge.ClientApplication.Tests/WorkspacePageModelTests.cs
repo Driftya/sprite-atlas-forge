@@ -91,6 +91,20 @@ public sealed class WorkspacePageModelTests
     }
 
     [Test]
+    public async Task Approving_selected_sprite_updates_export_state_without_reentry()
+    {
+        var project = CreateProject();
+        var model = CreateLoadedModel(new StubService(project), project);
+
+        await model.SetSelectedSpriteApprovedAsync(true);
+
+        await Assert.That(model.SelectedSprite!.IsApproved).IsTrue();
+        await Assert.That(model.IsSelectedSpriteApproved).IsTrue();
+        await Assert.That(model.IsBusy).IsFalse();
+        await Assert.That(model.CanUndo).IsTrue();
+    }
+
+    [Test]
     public async Task Cancel_command_cancels_a_running_detection()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));

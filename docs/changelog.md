@@ -3,6 +3,7 @@
 ## 2026-08-14
 
 - Added red border-side selection and arrow-key one-pixel sprite-region correction in the Windows canvas editor.
+- Fixed arrow-key border nudging when child controls hold focus and prevented approval changes from re-entering the native checkbox event.
 - Improved Auto detection so small isolated edge details within eight pixels of exactly one sprite are included in that sprite's detected bounds.
 
 ## 2026-08-13
