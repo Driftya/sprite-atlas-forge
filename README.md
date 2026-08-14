@@ -137,7 +137,13 @@ dotnet publish .\src\Driftya.SpriteAtlasForge.ClientApplication\Driftya.SpriteAt
   -p:WindowsAppSDKSelfContained=true
 ```
 
-Distribute the complete publish directory, not the executable by itself. CI builds the same directory on pushes and pull requests. A `vX.Y.Z` tag creates a draft GitHub Release containing a versioned ZIP and SHA-256 checksum after the full verification suite passes. See [the v1.0.0 release guide](docs/release/v1.0.0.md) for the release and smoke-test procedure.
+Distribute the complete publish directory, not the executable by itself. CI builds the same directory on pushes and pull requests. A `vX.Y.Z` tag creates a draft GitHub Release containing a versioned ZIP and SHA-256 checksum after the full verification suite passes.
+
+## Documentation
+
+- [Native project format](docs/native-format.md)
+- [Release process](docs/release-process.md)
+- [Changelog](docs/changelog.md)
 
 Build, run every test project, collect Cobertura reports, and enforce the checked-in per-project line-coverage thresholds:
 
