@@ -121,7 +121,13 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
         }
         else
         {
-            regions = DetectGroupedComponents(mask, size, options, progress, cancellationToken);
+            regions = DetectGroupedComponents(
+                mask,
+                size,
+                options,
+                progress,
+                cancellationToken,
+                attachmentDistance: options.BackgroundMode == SpriteBackgroundMode.Auto ? 8 : null);
         }
 
         var merged = regions
@@ -612,7 +618,8 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
         PixelSize size,
         SpriteDetectionOptions options,
         IProgress<AtlasProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? attachmentDistance = null)
     {
         if (options.MergeDistance > 8)
         {
@@ -687,7 +694,8 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
         var qualifying = components
             .Select(component => component.PixelCount >= options.MinimumArea)
             .ToArray();
-        var searchRadius = options.MergeDistance + 1;
+        var mergeSearchRadius = options.MergeDistance + 1;
+        var attachmentSearchRadius = attachmentDistance ?? mergeSearchRadius;
         for (var y = 0; y < size.Height; y++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -700,10 +708,10 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
                     continue;
                 }
 
-                for (var deltaY = 0; deltaY <= searchRadius; deltaY++)
+                for (var deltaY = 0; deltaY <= mergeSearchRadius; deltaY++)
                 {
-                    var minimumDeltaX = deltaY == 0 ? 1 : -searchRadius;
-                    for (var deltaX = minimumDeltaX; deltaX <= searchRadius; deltaX++)
+                    var minimumDeltaX = deltaY == 0 ? 1 : -mergeSearchRadius;
+                    for (var deltaX = minimumDeltaX; deltaX <= mergeSearchRadius; deltaX++)
                     {
                         var candidateX = x + deltaX;
                         var candidateY = y + deltaY;
@@ -739,9 +747,9 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
                     continue;
                 }
 
-                for (var deltaY = -searchRadius; deltaY <= searchRadius; deltaY++)
+                for (var deltaY = -attachmentSearchRadius; deltaY <= attachmentSearchRadius; deltaY++)
                 {
-                    for (var deltaX = -searchRadius; deltaX <= searchRadius; deltaX++)
+                    for (var deltaX = -attachmentSearchRadius; deltaX <= attachmentSearchRadius; deltaX++)
                     {
                         var candidateX = x + deltaX;
                         var candidateY = y + deltaY;

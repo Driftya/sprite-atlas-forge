@@ -67,6 +67,7 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
     private SpriteCanvasOverlay? _pressedSprite;
     private SpriteCanvasOverlay? _resizedSprite;
     private CanvasResizeHandle _resizeHandle;
+    private CanvasResizeHandle _selectedBorder;
     private CanvasPixelBounds? _previewBounds;
     private int? _verticalSnapGuide;
     private int? _horizontalSnapGuide;
@@ -77,6 +78,7 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
     private Microsoft.UI.Xaml.UIElement? _platformView;
     private uint? _rightPanPointerId;
     private Windows.Foundation.Point _rightPanOrigin;
+    private readonly List<Microsoft.UI.Xaml.Input.KeyboardAccelerator> _borderAccelerators = [];
 #endif
 
     public static readonly BindableProperty OverlaysProperty = BindableProperty.Create(
@@ -91,7 +93,7 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         typeof(string),
         typeof(SpriteOverlayView),
         defaultValue: null,
-        propertyChanged: InvalidatePropertyChanged);
+        propertyChanged: OnSelectedSpriteChanged);
 
     public static readonly BindableProperty ZoomScaleProperty = BindableProperty.Create(
         nameof(ZoomScale),
@@ -218,6 +220,13 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
                         HandleSize,
                         HandleSize);
                 }
+
+                if (_selectedBorder != CanvasResizeHandle.None)
+                {
+                    canvas.StrokeColor = Color.FromArgb("#FF4D5A");
+                    canvas.StrokeSize = 3;
+                    DrawSelectedBorder(canvas, displayed, _selectedBorder);
+                }
             }
         }
 
@@ -260,6 +269,7 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
             var handle = HitTestHandle(ScaleBounds(CanvasPixelBounds.From(selected), EffectiveScale), _pressPoint);
             if (handle != CanvasResizeHandle.None)
             {
+                _selectedBorder = IsSingleBorder(handle) ? handle : CanvasResizeHandle.None;
                 _resizedSprite = selected;
                 _resizeHandle = handle;
                 _previewBounds = CanvasPixelBounds.From(selected);
@@ -356,6 +366,64 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         Invalidate();
     }
 
+    private bool NudgeSelectedBorder(Windows.System.VirtualKey key)
+    {
+        if (!CanResize || _selectedBorder == CanvasResizeHandle.None ||
+            FindOverlay(SelectedSpriteId) is not { } selected)
+        {
+            return false;
+        }
+
+        if ((_selectedBorder is CanvasResizeHandle.Left or CanvasResizeHandle.Right) &&
+            key is not (Windows.System.VirtualKey.Left or Windows.System.VirtualKey.Right) ||
+            (_selectedBorder is CanvasResizeHandle.Top or CanvasResizeHandle.Bottom) &&
+            key is not (Windows.System.VirtualKey.Up or Windows.System.VirtualKey.Down))
+        {
+            return false;
+        }
+
+        var bounds = CanvasPixelBounds.From(selected);
+        var delta = key is Windows.System.VirtualKey.Left or Windows.System.VirtualKey.Up ? -1 : 1;
+        var (pointX, pointY) = _selectedBorder switch
+        {
+            CanvasResizeHandle.Left => ((double)bounds.X + delta, (double)bounds.Y),
+            CanvasResizeHandle.Right => ((double)bounds.Right + delta, (double)bounds.Y),
+            CanvasResizeHandle.Top => ((double)bounds.X, (double)bounds.Y + delta),
+            CanvasResizeHandle.Bottom => ((double)bounds.X, (double)bounds.Bottom + delta),
+            _ => (double.NaN, double.NaN),
+        };
+
+        if (double.IsNaN(pointX) || double.IsNaN(pointY))
+        {
+            return false;
+        }
+
+        var preview = SpriteResizeSnapper.Resize(
+            bounds,
+            _selectedBorder,
+            pointX,
+            pointY,
+            Math.Max(1, (int)Math.Round(SourceWidth)),
+            Math.Max(1, (int)Math.Round(SourceHeight)),
+            Overlays ?? [],
+            selected.SpriteId,
+            0,
+            snappingEnabled: false);
+
+        if (preview.Bounds == bounds)
+        {
+            return false;
+        }
+
+        SpriteRegionResized?.Invoke(this, new SpriteRegionResizedEventArgs(
+            selected.SpriteId,
+            preview.Bounds.X,
+            preview.Bounds.Y,
+            preview.Bounds.Width,
+            preview.Bounds.Height));
+        return true;
+    }
+
     private SpriteCanvasOverlay? HitTestSprite(PointF point) => (Overlays ?? [])
         .Where(overlay => Contains(CanvasPixelBounds.From(overlay), point))
         .OrderBy(overlay => overlay.Width * overlay.Height)
@@ -395,6 +463,31 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         }
 
         return CanvasResizeHandle.None;
+    }
+
+    private static bool IsSingleBorder(CanvasResizeHandle handle) => handle is
+        CanvasResizeHandle.Left or
+        CanvasResizeHandle.Top or
+        CanvasResizeHandle.Right or
+        CanvasResizeHandle.Bottom;
+
+    private static void DrawSelectedBorder(ICanvas canvas, RectF bounds, CanvasResizeHandle border)
+    {
+        switch (border)
+        {
+            case CanvasResizeHandle.Left:
+                canvas.DrawLine(bounds.Left, bounds.Top, bounds.Left, bounds.Bottom);
+                break;
+            case CanvasResizeHandle.Top:
+                canvas.DrawLine(bounds.Left, bounds.Top, bounds.Right, bounds.Top);
+                break;
+            case CanvasResizeHandle.Right:
+                canvas.DrawLine(bounds.Right, bounds.Top, bounds.Right, bounds.Bottom);
+                break;
+            case CanvasResizeHandle.Bottom:
+                canvas.DrawLine(bounds.Left, bounds.Bottom, bounds.Right, bounds.Bottom);
+                break;
+        }
     }
 
     private static PointF[] HandlePoints(RectF bounds) =>
@@ -455,6 +548,13 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
     private static void InvalidatePropertyChanged(BindableObject bindable, object? oldValue, object? newValue) =>
         ((SpriteOverlayView)bindable).Invalidate();
 
+    private static void OnSelectedSpriteChanged(BindableObject bindable, object? oldValue, object? newValue)
+    {
+        var view = (SpriteOverlayView)bindable;
+        view._selectedBorder = CanvasResizeHandle.None;
+        view.Invalidate();
+    }
+
     private void OnOverlayCollectionChanged(object? sender, NotifyCollectionChangedEventArgs args) => Invalidate();
 
     private void OnPlatformHandlerChanged(object? sender, EventArgs args)
@@ -487,6 +587,19 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         platformView.PointerCanceled += OnPlatformPointerCanceled;
         platformView.PointerCaptureLost += OnPlatformPointerCaptureLost;
         platformView.PointerWheelChanged += OnPlatformPointerWheelChanged;
+        foreach (var key in new[]
+                 {
+                     Windows.System.VirtualKey.Left,
+                     Windows.System.VirtualKey.Right,
+                     Windows.System.VirtualKey.Up,
+                     Windows.System.VirtualKey.Down,
+                 })
+        {
+            var accelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = key };
+            accelerator.Invoked += OnBorderAcceleratorInvoked;
+            _borderAccelerators.Add(accelerator);
+            platformView.KeyboardAccelerators.Add(accelerator);
+        }
     }
 
     private void DetachPlatformPointerHandlers()
@@ -502,13 +615,35 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         _platformView.PointerCanceled -= OnPlatformPointerCanceled;
         _platformView.PointerCaptureLost -= OnPlatformPointerCaptureLost;
         _platformView.PointerWheelChanged -= OnPlatformPointerWheelChanged;
+        foreach (var accelerator in _borderAccelerators)
+        {
+            _platformView.KeyboardAccelerators.Remove(accelerator);
+            accelerator.Invoked -= OnBorderAcceleratorInvoked;
+        }
+        _borderAccelerators.Clear();
         _platformView = null;
         _rightPanPointerId = null;
     }
 
+    private void OnBorderAcceleratorInvoked(
+        Microsoft.UI.Xaml.Input.KeyboardAccelerator sender,
+        Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
+    {
+        if (NudgeSelectedBorder(sender.Key))
+        {
+            args.Handled = true;
+        }
+    }
+
     private void OnPlatformPointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args)
     {
-        if (_platformView is null || !args.GetCurrentPoint(_platformView).Properties.IsRightButtonPressed)
+        if (_platformView is null)
+        {
+            return;
+        }
+
+        _platformView.Focus(Microsoft.UI.Xaml.FocusState.Pointer);
+        if (!args.GetCurrentPoint(_platformView).Properties.IsRightButtonPressed)
         {
             return;
         }

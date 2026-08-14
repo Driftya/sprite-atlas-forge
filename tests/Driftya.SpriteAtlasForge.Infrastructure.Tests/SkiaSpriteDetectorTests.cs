@@ -113,6 +113,28 @@ public sealed class SkiaSpriteDetectorTests
     }
 
     [Test]
+    public async Task Auto_detection_attaches_a_small_detail_across_a_soft_gap()
+    {
+        using var directory = new TestDirectory();
+        var path = directory.GetPath("auto-attached-engine-detail.png");
+        WritePng(path, 20, 12, bitmap =>
+        {
+            Fill(bitmap, 2, 2, 6, 7, new SKColor(255, 255, 255, 255));
+            Fill(bitmap, 12, 4, 1, 3, new SKColor(40, 150, 255, 255));
+        });
+        var detector = new SkiaSpriteDetector();
+
+        var result = await detector.DetectAsync(path, new SpriteDetectionOptions
+        {
+            MinimumArea = 20,
+            MergeDistance = 2,
+            NoiseReductionRadius = 0,
+        });
+
+        await Assert.That(result.Regions).IsEquivalentTo([new PixelRect(2, 2, 11, 7)]);
+    }
+
+    [Test]
     public async Task Detection_rejects_non_PNG_input()
     {
         using var directory = new TestDirectory();

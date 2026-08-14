@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-14
+
+- Added red border-side selection and arrow-key one-pixel sprite-region correction in the Windows canvas editor.
+- Improved Auto detection so small isolated edge details within eight pixels of exactly one sprite are included in that sprite's detected bounds.
+
 ## 2026-08-13
 
 - Fixed the Windows file-picker extension failure by limiting picker filters to validated dot-prefixed Windows extensions.
