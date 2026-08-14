@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <OutputType>Exe</OutputType>
+    <AssemblyName>SpriteAtlasForge</AssemblyName>
     <RootNamespace>Driftya.SpriteAtlasForge.ClientApplication</RootNamespace>
     <UseMaui>true</UseMaui>
     <SingleProject>true</SingleProject>
@@ -14,12 +15,24 @@
 
     <ApplicationTitle>Sprite Atlas Forge</ApplicationTitle>
     <ApplicationId>com.driftya.spriteatlasforge</ApplicationId>
-    <ApplicationDisplayVersion>0.1</ApplicationDisplayVersion>
+    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
     <WindowsPackageType>None</WindowsPackageType>
 
+    <Version>1.0.0</Version>
+    <Authors>Driftya</Authors>
+    <Product>Sprite Atlas Forge</Product>
+    <Description>A Windows desktop editor for detecting, authoring, repacking, and exporting sprite atlases.</Description>
+    <Copyright>Copyright © 2026 Driftya</Copyright>
+    <RepositoryUrl>https://github.com/Driftya/sprite-atlas-forge</RepositoryUrl>
+
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+  </PropertyGroup>
+
+  <!-- Required by the Windows App SDK when publishing an unpackaged app for a specific RID. -->
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows' and '$(RuntimeIdentifierOverride)' != ''">
+    <RuntimeIdentifier>$(RuntimeIdentifierOverride)</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>

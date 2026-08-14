@@ -102,6 +102,22 @@ Run the Windows desktop client:
 dotnet run --project src/Driftya.SpriteAtlasForge.ClientApplication -f net10.0-windows10.0.19041.0
 ```
 
+## Windows releases
+
+The production desktop build is an unpackaged, self-contained Windows x64 application. Publish it locally with:
+
+```powershell
+dotnet publish .\src\Driftya.SpriteAtlasForge.ClientApplication\Driftya.SpriteAtlasForge.ClientApplication.csproj `
+  --framework net10.0-windows10.0.19041.0 `
+  --configuration Release `
+  --output .\.artifacts\release-smoke-test `
+  -p:RuntimeIdentifierOverride=win-x64 `
+  -p:WindowsPackageType=None `
+  -p:WindowsAppSDKSelfContained=true
+```
+
+Distribute the complete publish directory, not the executable by itself. CI builds the same directory on pushes and pull requests. A `vX.Y.Z` tag also creates a draft GitHub Release containing a versioned ZIP and SHA-256 checksum after the full verification suite passes. See [the v1.0.0 release guide](docs/release/v1.0.0.md) for the exact release and smoke-test procedure.
+
 Build, run every test project, collect Cobertura reports, and enforce the checked-in per-project line-coverage thresholds:
 
 ```powershell

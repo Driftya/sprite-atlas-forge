@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Validate tag and release notes
+        id: release
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag -replace '^v', ''
+          $project = [xml](Get-Content -Raw 'src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj')
+          $projectVersion = $project.SelectSingleNode('/Project/PropertyGroup/ApplicationDisplayVersion').InnerText
+          if ($version -ne $projectVersion) {
+            throw "Tag version '$version' does not match ApplicationDisplayVersion '$projectVersion'."
+          }
+
+          $notes = "docs/release/$tag.md"
+          if (-not (Test-Path -LiteralPath $notes)) {
+            throw "Release notes '$notes' do not exist."
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "notes=$notes" >> $env:GITHUB_OUTPUT
+
+      - name: Install .NET MAUI Windows workload
+        shell: pwsh
+        run: dotnet workload install maui-windows
+
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore Driftya.SpriteAtlasForge.slnx --nologo
+
+      - name: Build and test
+        shell: pwsh
+        run: ./eng/verify.ps1 -Configuration Release -NoRestore
+
+      - name: Publish self-contained Windows application
+        shell: pwsh
+        run: >-
+          dotnet publish src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj
+          --framework net10.0-windows10.0.19041.0
+          --configuration Release
+          --output artifacts/windows-x64
+          -p:RuntimeIdentifierOverride=win-x64
+          -p:WindowsPackageType=None
+          -p:WindowsAppSDKSelfContained=true
+
+      - name: Record resolved dependencies
+        shell: pwsh
+        run: >-
+          dotnet list src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj
+          package --include-transitive
+          --framework net10.0-windows10.0.19041.0
+          | Out-File -Encoding utf8 artifacts/windows-x64/dependencies.txt
+
+      - name: Create release archive and checksum
+        id: assets
+        shell: pwsh
+        run: |
+          $archive = "SpriteAtlasForge-${{ steps.release.outputs.version }}-windows-x64.zip"
+          Compress-Archive -Path 'artifacts/windows-x64/*' -DestinationPath $archive -CompressionLevel Optimal
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
+          "$hash  $archive" | Out-File -Encoding ascii "$archive.sha256"
+          "archive=$archive" >> $env:GITHUB_OUTPUT
+          "checksum=$archive.sha256" >> $env:GITHUB_OUTPUT
+
+      - name: Create draft GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${{ github.ref_name }}"
+          "${{ steps.assets.outputs.archive }}"
+          "${{ steps.assets.outputs.checksum }}"
+          --verify-tag
+          --draft
+          --title "Sprite Atlas Forge ${{ github.ref_name }}"
+          --notes-file "${{ steps.release.outputs.notes }}"

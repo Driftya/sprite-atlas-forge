@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.0
+
+- Prepared the Windows MAUI client for its first production release with v1.0.0 assembly and display metadata.
+- Replaced the default .NET application icon and splash artwork with the Sprite Atlas Forge brand icon.
+- Added GitHub CI for full verification and a self-contained Windows x64 build artifact.
+- Added tag-driven draft GitHub Releases with a versioned ZIP, dependency inventory, and SHA-256 checksum.
+- Documented the v1.0.0 release, smoke-test, tagging, and publication procedure.
+
 ## 2026-08-14
 
 - Fixed Windows Save As by using an initialized storage picker and suggesting the complete native project filename.
