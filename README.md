@@ -9,9 +9,20 @@
 [![Tests](https://img.shields.io/badge/tests-103%2F103%20passed-brightgreen)](https://github.com/Driftya/sprite-atlas-forge/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/Driftya/sprite-atlas-forge?display_name=tag&sort=semver&label=release)](https://github.com/Driftya/sprite-atlas-forge/releases/latest)
 
-Sprite Atlas Forge is a Windows-first reverse texture packer. It takes an existing PNG spritesheet with either transparency or a border-connected background, detects its sprites, lets users author connector metadata, saves a native `.saf.json` project, optionally repacks the image, and exports Phaser, Unity 6, and Godot 4 atlases.
+Sprite Atlas Forge turns existing texture sheets into organized, reusable sprite atlases and texture packs. It detects sprite regions, gives artists and developers a place to correct bounds and author connector metadata, keeps the source work in a portable `.saf.json` project, and exports atlas data for Phaser, Unity 6, and Godot 4.
 
-Phases 0–3 are implemented. The deterministic untrimmed repacker and Phaser, Unity 6, and Godot 4 exporters are also working. The Windows MAUI client supports open/detect/save/save-as, editable sprite regions, approval-gated consumer export, string metadata tags, a zoomable/pannable atlas canvas with direct sprite selection and drag handles, click/drag plus numeric connector editing, dirty-state protection, undo/redo, validation, cancellable progress, repacking, and named-format export.
+The project is designed for a practical texture-pipeline workflow: inspect a generated or hand-authored sheet, recover accurate regions when automatic detection needs help, add the metadata your game needs, repack the image when appropriate, and export assets in an engine-friendly format. The native project remains the source of truth, so Sprite Atlas Forge-specific connectors, tags, properties, and metadata are preserved alongside the atlas data.
+
+## Highlights
+
+- Detect sprites from transparent PNG sheets or sheets with a border-connected background.
+- Review and edit source regions with numeric controls or direct canvas handles.
+- Add named connectors, string tags, properties, and approval metadata to sprites.
+- Save editable work as a native `.saf.json` project and validate it from the CLI.
+- Repack sprites deterministically without rotation and preserve connector coordinates.
+- Export Phaser JSON, Unity 6 multi-sprite textures, and Godot 4 `AtlasTexture` resources.
+- Use the desktop editor or the automation-friendly command-line interface.
+- Recover manually with **Add sprite**, **Source region**, undo/redo, and lossless PNG crops.
 
 ## Solution architecture
 
@@ -30,11 +41,12 @@ Phases 0–3 are implemented. The deterministic untrimmed repacker and Phaser, U
 
 Both hosts call the same Application and Infrastructure services in-process. The desktop client does not launch the CLI executable.
 
-## Requirements
+## Supported platforms and requirements
 
 - .NET 10 SDK
-- Windows 10 version 1809 or newer
-- .NET MAUI Windows workload for the desktop client
+- CLI workflows run wherever the .NET 10 SDK and project dependencies are available.
+- The desktop editor currently supports Windows 10 version 1809 or newer.
+- The desktop editor requires the .NET MAUI Windows workload.
 
 Install the workload when needed:
 
@@ -111,7 +123,7 @@ Run the Windows desktop client:
 dotnet run --project src/Driftya.SpriteAtlasForge.ClientApplication -f net10.0-windows10.0.19041.0
 ```
 
-## Windows releases
+## Releases
 
 The production desktop build is an unpackaged, self-contained Windows x64 application. Publish it locally with:
 
@@ -125,7 +137,7 @@ dotnet publish .\src\Driftya.SpriteAtlasForge.ClientApplication\Driftya.SpriteAt
   -p:WindowsAppSDKSelfContained=true
 ```
 
-Distribute the complete publish directory, not the executable by itself. CI builds the same directory on pushes and pull requests. A `vX.Y.Z` tag also creates a draft GitHub Release containing a versioned ZIP and SHA-256 checksum after the full verification suite passes. See [the v1.0.0 release guide](docs/release/v1.0.0.md) for the exact release and smoke-test procedure.
+Distribute the complete publish directory, not the executable by itself. CI builds the same directory on pushes and pull requests. A `vX.Y.Z` tag creates a draft GitHub Release containing a versioned ZIP and SHA-256 checksum after the full verification suite passes. See [the v1.0.0 release guide](docs/release/v1.0.0.md) for the release and smoke-test procedure.
 
 Build, run every test project, collect Cobertura reports, and enforce the checked-in per-project line-coverage thresholds:
 
@@ -142,7 +154,3 @@ Package versions are centralized in `Directory.Packages.props` and float within 
 Major upgrades are manual: review release notes and migration impact, change the major wildcard intentionally, restore, and run the full verification commands. NuGet audit checks are enabled, and Dependabot is configured to propose non-major updates while ignoring major updates.
 
 Because floating versions are intentional, this application repository does not use a committed NuGet lock file. Release builds should record the resolved dependency graph in their build artifacts for traceability.
-
-Hold Shift while dragging a sprite-region handle to temporarily disable magnetic snapping and its alignment guides.
-
-Blue-dominant engine glow uses a larger bounded recovery radius than ordinary soft edges, preserving low-alpha flare tails without treating neutral generation shadows as sprite extent.
