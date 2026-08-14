@@ -295,7 +295,8 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
             Math.Max(1, (int)Math.Round(SourceHeight)),
             Overlays ?? [],
             _resizedSprite.SpriteId,
-            SnapDistance / EffectiveScale);
+            SnapDistance / EffectiveScale,
+            snappingEnabled: !IsShiftPressed());
         _previewBounds = preview.Bounds;
         _verticalSnapGuide = preview.VerticalGuide;
         _horizontalSnapGuide = preview.HorizontalGuide;
@@ -423,6 +424,17 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
 
     private static bool Contains(CanvasPixelBounds bounds, PointF point) =>
         point.X >= bounds.X && point.X <= bounds.Right && point.Y >= bounds.Y && point.Y <= bounds.Bottom;
+
+    private static bool IsShiftPressed()
+    {
+#if WINDOWS
+        var state = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(
+            Windows.System.VirtualKey.Shift);
+        return state.HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+#else
+        return false;
+#endif
+    }
 
     private static void OnOverlaysChanged(BindableObject bindable, object? oldValue, object? newValue)
     {

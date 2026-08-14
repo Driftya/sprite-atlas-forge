@@ -28,4 +28,6 @@
 - Added right-button drag panning with coalesced scroll updates for the zoomed atlas canvas.
 - Added Delete-key removal for the selected sprite while preserving Delete inside text inputs.
 - Added snapping back to a sprite's own original edge and right-button wheel zoom anchored at the pointer.
+- Extended bounded Auto recovery for blue-dominant engine glow so low-alpha flare tails reach the detected sprite edge without pulling in neutral shadows.
+- Added a hold-Shift bypass for sprite-border snapping during canvas resize drags.
 - Expanded Application, CLI, and Client regression coverage.

@@ -416,6 +416,7 @@ public sealed class SkiaSpriteDetectorTests
         await Assert.That(result.ImageSize).IsEqualTo(new PixelSize(1536, 1024));
         await Assert.That(progress[0].Message).IsEqualTo("Ignoring low-alpha background noise through alpha 248.");
         await Assert.That(result.Regions).Count().IsEqualTo(175);
+        await Assert.That(result.Regions).Contains(new PixelRect(246, 494, 184, 106));
         await Assert.That(result.Regions).Contains(new PixelRect(1087, 521, 120, 167));
         await Assert.That(result.Regions).Contains(new PixelRect(1197, 604, 51, 84));
         await Assert.That(result.Regions).Contains(new PixelRect(1056, 652, 44, 35));

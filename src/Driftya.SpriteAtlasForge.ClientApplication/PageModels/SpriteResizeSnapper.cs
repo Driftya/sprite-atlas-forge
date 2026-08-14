@@ -43,7 +43,8 @@ public static class SpriteResizeSnapper
         int sourceHeight,
         IReadOnlyList<SpriteCanvasOverlay> overlays,
         string resizedSpriteId,
-        double snapDistance)
+        double snapDistance,
+        bool snappingEnabled = true)
     {
         var left = original.X;
         var top = original.Y;
@@ -74,6 +75,14 @@ public static class SpriteResizeSnapper
 
         int? verticalGuide = null;
         int? horizontalGuide = null;
+        if (!snappingEnabled)
+        {
+            return new CanvasResizePreview(
+                new CanvasPixelBounds(left, top, right - left, bottom - top),
+                verticalGuide,
+                horizontalGuide);
+        }
+
         var tolerance = Math.Max(0, (int)Math.Ceiling(snapDistance));
         var others = overlays
             .Where(overlay => !string.Equals(overlay.SpriteId, resizedSpriteId, StringComparison.OrdinalIgnoreCase))

@@ -88,4 +88,27 @@ public sealed class SpriteResizeSnapperTests
         await Assert.That(result.Bounds).IsEqualTo(new CanvasPixelBounds(20, 20, 30, 30));
         await Assert.That(result.VerticalGuide).IsEqualTo(50);
     }
+
+    [Test]
+    public async Task Resize_bypasses_snap_targets_when_snapping_is_disabled()
+    {
+        var result = SpriteResizeSnapper.Resize(
+            new CanvasPixelBounds(20, 20, 30, 30),
+            CanvasResizeHandle.Right,
+            53,
+            20,
+            100,
+            100,
+            [
+                new SpriteCanvasOverlay("selected", 20, 20, 30, 30),
+                new SpriteCanvasOverlay("neighbor", 55, 20, 20, 30),
+            ],
+            "selected",
+            8,
+            snappingEnabled: false);
+
+        await Assert.That(result.Bounds).IsEqualTo(new CanvasPixelBounds(20, 20, 33, 30));
+        await Assert.That(result.VerticalGuide).IsNull();
+        await Assert.That(result.HorizontalGuide).IsNull();
+    }
 }

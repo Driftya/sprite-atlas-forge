@@ -115,3 +115,7 @@ Package versions are centralized in `Directory.Packages.props` and float within 
 Major upgrades are manual: review release notes and migration impact, change the major wildcard intentionally, restore, and run the full verification commands. NuGet audit checks are enabled, and Dependabot is configured to propose non-major updates while ignoring major updates.
 
 Because floating versions are intentional, this application repository does not use a committed NuGet lock file. Release builds should record the resolved dependency graph in their build artifacts for traceability.
+
+Hold Shift while dragging a sprite-region handle to temporarily disable magnetic snapping and its alignment guides.
+
+Blue-dominant engine glow uses a larger bounded recovery radius than ordinary soft edges, preserving low-alpha flare tails without treating neutral generation shadows as sprite extent.

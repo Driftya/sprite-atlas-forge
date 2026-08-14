@@ -7,8 +7,8 @@ namespace Driftya.SpriteAtlasForge.Infrastructure;
 
 public sealed class SkiaSpriteDetector : ISpriteDetector
 {
-    private const int AutomaticWandAlphaRange = 8;
     private const int AutomaticWandRadius = 8;
+    private const int AutomaticGlowRadius = 32;
     private const double AutomaticGutterMaximumOccupancy = 0.4;
     private const double AutomaticGutterMinimumMarkerShare = 0.15;
 
@@ -93,8 +93,13 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
         {
             var supportAlphaThreshold = (byte)Math.Max(
                 options.AlphaThreshold,
-                effectiveAlphaThreshold - AutomaticWandAlphaRange);
-            var supportMask = BuildVisibleMask(bitmap, size, supportAlphaThreshold, cancellationToken);
+                effectiveAlphaThreshold - 8);
+            var supportMask = BuildAutomaticSupportMask(
+                bitmap,
+                size,
+                supportAlphaThreshold,
+                (byte)options.AlphaThreshold,
+                cancellationToken);
             var markerMask = BuildVisibleMask(bitmap, size, automaticAlpha.MarkerThreshold, cancellationToken);
             if (options.NoiseReductionRadius > 0)
             {
@@ -146,6 +151,38 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
                 if (bitmap.GetPixel(x, y).Alpha > alphaThreshold)
                 {
                     mask[checked(y * size.Width + x)] = 1;
+                }
+            }
+        }
+
+        return mask;
+    }
+
+    private static byte[] BuildAutomaticSupportMask(
+        SKBitmap bitmap,
+        PixelSize size,
+        byte confidentAlphaThreshold,
+        byte glowAlphaThreshold,
+        CancellationToken cancellationToken)
+    {
+        var mask = new byte[checked(size.Width * size.Height)];
+        for (var y = 0; y < size.Height; y++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            for (var x = 0; x < size.Width; x++)
+            {
+                var color = bitmap.GetPixel(x, y);
+                var isChromaticGlow = color.Alpha > glowAlphaThreshold &&
+                    color.Blue >= 96 &&
+                    color.Blue >= color.Green &&
+                    color.Blue - color.Red >= 48;
+                if (color.Alpha > confidentAlphaThreshold)
+                {
+                    mask[checked(y * size.Width + x)] = 1;
+                }
+                else if (isChromaticGlow)
+                {
+                    mask[checked(y * size.Width + x)] = 2;
                 }
             }
         }
@@ -1001,7 +1038,7 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
         {
             cancellationToken.ThrowIfCancellationRequested();
             var distance = distances[index];
-            if (distance >= AutomaticWandRadius)
+            if (distance >= AutomaticGlowRadius)
             {
                 continue;
             }
@@ -1022,13 +1059,17 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
                 }
 
                 var candidateIndex = checked(candidateY * size.Width + candidateX);
-                if (supportMask[candidateIndex] == 0 || labels[candidateIndex] != 0)
+                var supportKind = supportMask[candidateIndex];
+                var nextDistance = distance + 1;
+                if (supportKind == 0 ||
+                    supportKind == 1 && nextDistance > AutomaticWandRadius ||
+                    labels[candidateIndex] != 0)
                 {
                     return;
                 }
 
                 labels[candidateIndex] = labels[index];
-                distances[candidateIndex] = (byte)(distance + 1);
+                distances[candidateIndex] = (byte)nextDistance;
                 queue.Enqueue(candidateIndex);
             }
         }
