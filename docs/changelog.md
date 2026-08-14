@@ -8,6 +8,10 @@
 - Added tag-driven draft GitHub Releases with a versioned ZIP, dependency inventory, and SHA-256 checksum.
 - Documented the release, smoke-test, tagging, and publication procedure.
 
+## 2026-08-15
+
+- Kept the Delete keyboard shortcut while hiding WinUI's transient accelerator hint, and added Left/Right navigation to cycle between sprites when no canvas border is selected.
+
 ## 2026-08-14
 
 - Fixed Windows Save As by using an initialized storage picker and suggesting the complete native project filename.

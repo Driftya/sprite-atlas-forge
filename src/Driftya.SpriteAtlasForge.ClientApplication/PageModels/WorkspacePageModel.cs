@@ -692,6 +692,24 @@ public partial class WorkspacePageModel : ObservableObject
             string.Equals(sprite.Id, spriteId, StringComparison.OrdinalIgnoreCase));
     }
 
+    public bool TrySelectAdjacentSprite(int direction)
+    {
+        if (SelectedSprite is null || Sprites.Count < 2 || direction == 0)
+        {
+            return false;
+        }
+
+        var selectedIndex = Sprites.IndexOf(SelectedSprite);
+        if (selectedIndex < 0)
+        {
+            return false;
+        }
+
+        var nextIndex = (selectedIndex + (direction < 0 ? -1 : 1) + Sprites.Count) % Sprites.Count;
+        SelectedSprite = Sprites[nextIndex];
+        return true;
+    }
+
     [RelayCommand]
     private void Undo()
     {

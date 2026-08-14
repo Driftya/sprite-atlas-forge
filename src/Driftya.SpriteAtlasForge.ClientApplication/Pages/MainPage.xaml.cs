@@ -71,7 +71,7 @@ public partial class MainPage : ContentPage
     {
         await DisplayAlertAsync(
             "Canvas shortcuts",
-            "Arrow keys: nudge the selected border by one pixel\n" +
+            "Arrow keys: nudge the selected border; Left / Right select the previous / next sprite when no border is selected\n" +
             "Shift + drag: temporarily disable snapping and guides\n" +
             "Right mouse button + drag: pan the canvas\n" +
             "Right mouse button + wheel: zoom around the pointer\n" +
@@ -204,6 +204,8 @@ public partial class MainPage : ContentPage
         }
 
         _platformView = platformView;
+        platformView.KeyboardAcceleratorPlacementMode =
+            Microsoft.UI.Xaml.Input.KeyboardAcceleratorPlacementMode.Hidden;
         _deleteAccelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator
         {
             Key = Windows.System.VirtualKey.Delete,
@@ -224,6 +226,7 @@ public partial class MainPage : ContentPage
             _nudgeAccelerators.Add(accelerator);
             platformView.KeyboardAccelerators.Add(accelerator);
         }
+
 #endif
     }
 
@@ -255,11 +258,24 @@ public partial class MainPage : ContentPage
         Microsoft.UI.Xaml.Input.KeyboardAccelerator sender,
         Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (_platformView?.XamlRoot is not null &&
-            !IsTextInputFocused() &&
-            OverlayView.TryNudgeSelectedBorder(sender.Key))
+        if (_platformView?.XamlRoot is null ||
+            IsTextInputFocused() ||
+            BindingContext is not WorkspacePageModel model)
+        {
+            return;
+        }
+
+        if (OverlayView.TryNudgeSelectedBorder(sender.Key))
         {
             args.Handled = true;
+            return;
+        }
+
+        if (!OverlayView.HasSelectedBorder &&
+            sender.Key is Windows.System.VirtualKey.Left or Windows.System.VirtualKey.Right)
+        {
+            args.Handled = model.TrySelectAdjacentSprite(
+                sender.Key == Windows.System.VirtualKey.Left ? -1 : 1);
         }
     }
 
@@ -285,6 +301,7 @@ public partial class MainPage : ContentPage
                 _platformView.KeyboardAccelerators.Remove(accelerator);
                 accelerator.Invoked -= OnNudgeAcceleratorInvoked;
             }
+
         }
 
         _nudgeAccelerators.Clear();

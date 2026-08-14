@@ -345,6 +345,20 @@ public sealed class WorkspacePageModelTests
     }
 
     [Test]
+    public async Task Adjacent_sprite_selection_cycles_in_both_directions()
+    {
+        var project = CreateProject();
+        var model = CreateLoadedModel(new StubService(project), project);
+
+        await model.AddSpriteCommand.ExecuteAsync(null);
+
+        await Assert.That(model.TrySelectAdjacentSprite(1)).IsTrue();
+        await Assert.That(model.SelectedSprite!.Id).IsEqualTo("module");
+        await Assert.That(model.TrySelectAdjacentSprite(-1)).IsTrue();
+        await Assert.That(model.SelectedSprite!.Id).IsEqualTo("sprite_001");
+    }
+
+    [Test]
     public async Task Canvas_connector_coordinates_round_trip_through_zoom_transform()
     {
         var project = CreateProject();
