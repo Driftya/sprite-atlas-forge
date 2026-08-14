@@ -92,6 +92,22 @@ public sealed class AtlasForgeCliTests
     }
 
     [Test]
+    [Arguments("unity-6-spritesheet")]
+    [Arguments("godot-4-atlas-textures")]
+    public async Task Consumer_export_formats_are_accepted(string format)
+    {
+        var service = new StubService();
+        var root = new AtlasForgeCli(service, AtlasForgeApplicationInfo.Default).CreateRootCommand();
+
+        var exitCode = await root.Parse([
+            "export", "project.saf.json", "--format", format, "--output", "export",
+        ]).InvokeAsync();
+
+        await Assert.That(exitCode).IsEqualTo(0);
+        await Assert.That(service.LastExportRequest!.Format).IsEqualTo(format);
+    }
+
+    [Test]
     [Arguments(typeof(AtlasProjectFormatException), 3)]
     [Arguments(typeof(IOException), 4)]
     [Arguments(typeof(UnauthorizedAccessException), 4)]

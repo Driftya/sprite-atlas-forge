@@ -34,7 +34,18 @@ public sealed class DependencyInjectionTests
 
         var registrations = services.Count(descriptor =>
             descriptor.ServiceType == typeof(AtlasForgeApplicationInfo));
+        using var serviceProvider = services.BuildServiceProvider();
+        var exporterFormats = serviceProvider.GetServices<IAtlasExporter>()
+            .Select(exporter => exporter.Format)
+            .Order()
+            .ToArray();
 
         await Assert.That(registrations).IsEqualTo(1);
+        await Assert.That(exporterFormats).IsEquivalentTo([
+            "godot-4-atlas-textures",
+            "native",
+            "phaser-json-hash",
+            "unity-6-spritesheet",
+        ]);
     }
 }

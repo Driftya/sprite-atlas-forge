@@ -1,8 +1,8 @@
 # Sprite Atlas Forge
 
-Sprite Atlas Forge is a Windows-first reverse texture packer. It takes an existing PNG spritesheet with either transparency or a border-connected background, detects its sprites, lets users author connector metadata, saves a native `.saf.json` project, optionally repacks the image, and exports Phaser JSON Hash atlases.
+Sprite Atlas Forge is a Windows-first reverse texture packer. It takes an existing PNG spritesheet with either transparency or a border-connected background, detects its sprites, lets users author connector metadata, saves a native `.saf.json` project, optionally repacks the image, and exports Phaser, Unity 6, and Godot 4 atlases.
 
-Phases 0–3 are implemented. The deterministic untrimmed repacker and Phaser exporter are also working. The Windows MAUI client supports open/detect/save/save-as, editable sprite regions, approval-gated Phaser export, string metadata tags, a zoomable/pannable atlas canvas with direct sprite selection and drag handles, click/drag plus numeric connector editing, dirty-state protection, undo/redo, validation, cancellable progress, repacking, and Phaser export.
+Phases 0–3 are implemented. The deterministic untrimmed repacker and Phaser, Unity 6, and Godot 4 exporters are also working. The Windows MAUI client supports open/detect/save/save-as, editable sprite regions, approval-gated consumer export, string metadata tags, a zoomable/pannable atlas canvas with direct sprite selection and drag handles, click/drag plus numeric connector editing, dirty-state protection, undo/redo, validation, cancellable progress, repacking, and named-format export.
 
 See [the implementation plan](docs/plans/reverse-texture-packer-implementation-plan.md) for the complete checklist and design decisions.
 
@@ -66,7 +66,11 @@ dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- connector ad
 dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- connector update .\assets\modules.saf.json --sprite habitat_01 --current-name next --name attachment --x 96 --y 32
 dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- repack .\assets\modules.saf.json --output .\artifacts\repacked --padding 2
 dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- export .\assets\modules.saf.json --format phaser-json-hash --output .\artifacts\phaser
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- export .\assets\modules.saf.json --format unity-6-spritesheet --output .\artifacts\unity
+dotnet run --project src/Driftya.SpriteAtlasForge.CliApplication -- export .\assets\modules.saf.json --format godot-4-atlas-textures --output .\artifacts\godot
 ```
+
+Unity export writes the atlas PNG and a Unity 6 multi-sprite texture `.meta` file. Godot export writes the atlas PNG and one Godot 4 `AtlasTexture` `.tres` resource per approved sprite. Both formats preserve the atlas frame rectangles; Sprite Atlas Forge-only connector, tag, property, and metadata values remain in the native project.
 
 Add `--json` to processing commands for machine-readable stdout. Detection currently supports PNG input. Repacking never rotates sprites and preserves connector coordinates.
 

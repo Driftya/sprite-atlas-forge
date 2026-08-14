@@ -59,6 +59,35 @@ internal static class ExportFileSupport
         }
     }
 
+    public static async Task WriteTextAtomicallyAsync(
+        string destinationPath,
+        string content,
+        CancellationToken cancellationToken)
+    {
+        var destinationFullPath = Path.GetFullPath(destinationPath);
+        var directory = Path.GetDirectoryName(destinationFullPath)
+            ?? throw new ArgumentException("Destination path must have a parent directory.", nameof(destinationPath));
+        Directory.CreateDirectory(directory);
+        var temporaryPath = Path.Combine(directory, $".{Path.GetFileName(destinationPath)}.{Guid.NewGuid():N}.tmp");
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                temporaryPath,
+                content,
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                cancellationToken).ConfigureAwait(false);
+            File.Move(temporaryPath, destinationFullPath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+        }
+    }
+
     public static string GetProjectBaseName(string projectPath)
     {
         var fileName = Path.GetFileName(projectPath);

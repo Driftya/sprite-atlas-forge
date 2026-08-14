@@ -354,8 +354,14 @@ public sealed class AtlasForgeCli
     private Command CreateExportCommand()
     {
         var project = ProjectArgument();
-        var format = RequiredOption("--format", "Export format: native or phaser-json-hash.");
-        format.AcceptOnlyFromAmong("native", "phaser-json-hash");
+        var format = RequiredOption(
+            "--format",
+            "Export format: native, phaser-json-hash, unity-6-spritesheet, or godot-4-atlas-textures.");
+        format.AcceptOnlyFromAmong(
+            "native",
+            "phaser-json-hash",
+            "unity-6-spritesheet",
+            "godot-4-atlas-textures");
         var output = RequiredOption("--output", "Destination directory.");
         var json = JsonOption();
         var command = new Command("export", "Export a native atlas project.");

@@ -48,7 +48,9 @@
       "properties": {
         "position": "Middle",
         "weight": 1.25
-      }
+      },
+      "isApproved": false,
+      "metadata": {}
     }
   ]
 }

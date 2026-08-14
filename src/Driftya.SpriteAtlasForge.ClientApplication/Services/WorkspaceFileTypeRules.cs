@@ -7,6 +7,15 @@ public static class WorkspaceFileTypeRules
     public static IReadOnlyList<string> NativeProjectExtensions(string nativeProjectExtension) =>
         Validate([nativeProjectExtension]);
 
+    public static string EnsureExtension(string fileName, string extension)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+        var validatedExtension = Validate([extension])[0];
+        return fileName.EndsWith(validatedExtension, StringComparison.OrdinalIgnoreCase)
+            ? fileName
+            : fileName + validatedExtension;
+    }
+
     public static IReadOnlyList<string> Validate(IEnumerable<string> extensions)
     {
         ArgumentNullException.ThrowIfNull(extensions);

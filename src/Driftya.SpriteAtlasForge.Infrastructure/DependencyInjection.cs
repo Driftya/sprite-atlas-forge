@@ -23,6 +23,8 @@ public static class DependencyInjection
         services.TryAddSingleton<IAtlasForgeService, AtlasForgeService>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IAtlasExporter, NativeAtlasExporter>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IAtlasExporter, PhaserJsonHashExporter>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IAtlasExporter, UnitySpriteSheetExporter>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IAtlasExporter, GodotAtlasTextureExporter>());
 
         return services;
     }

@@ -30,4 +30,13 @@ public sealed class WorkspaceFileTypeRulesTests
         await Assert.That(exception).IsNotNull();
         await Assert.That(exception!.Message).Contains("must start with '.'");
     }
+
+    [Test]
+    public async Task Save_picker_suggests_the_complete_native_extension_once()
+    {
+        await Assert.That(WorkspaceFileTypeRules.EnsureExtension("modules", ".saf.json"))
+            .IsEqualTo("modules.saf.json");
+        await Assert.That(WorkspaceFileTypeRules.EnsureExtension("modules.saf.json", ".saf.json"))
+            .IsEqualTo("modules.saf.json");
+    }
 }

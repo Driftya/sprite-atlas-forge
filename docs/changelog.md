@@ -2,6 +2,8 @@
 
 ## 2026-08-14
 
+- Fixed Windows Save As by using an initialized storage picker and suggesting the complete native project filename.
+- Added approval-gated Unity 6 multi-sprite and Godot 4 `AtlasTexture` export formats to the CLI and desktop editor.
 - Added red border-side selection and arrow-key one-pixel sprite-region correction in the Windows canvas editor.
 - Fixed arrow-key border nudging when child controls hold focus and prevented approval changes from re-entering the native checkbox event.
 - Improved Auto detection so small isolated edge details within eight pixels of exactly one sprite are included in that sprite's detected bounds.

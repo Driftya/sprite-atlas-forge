@@ -70,7 +70,8 @@ public partial class WorkspacePageModel : ObservableObject
 
     public ObservableCollection<SpriteMetadataEntry> SelectedSpriteMetadata { get; } = [];
 
-    public IReadOnlyList<string> ExportFormats { get; } = ["native", "phaser-json-hash"];
+    public IReadOnlyList<string> ExportFormats { get; } =
+        ["native", "phaser-json-hash", "unity-6-spritesheet", "godot-4-atlas-textures"];
 
     public IReadOnlyList<string> DetectionBackgroundModes { get; } =
         ["Auto", "Alpha only", "Border connected"];

@@ -38,6 +38,8 @@ public sealed class AtlasForgeWorkflowTests
             }));
         var connected = await service.AddConnectorAsync(
             new AddConnectorRequest(projectPath, "sprite_001", "next", 3, 2));
+        var approved = AtlasProjectEditor.SetSpriteApproved(connected, "sprite_001", true);
+        await store.SaveAsync(approved, projectPath);
         var validation = await service.ValidateAsync(projectPath);
         var repack = await service.RepackAsync(new RepackAtlasRequest(
             projectPath,

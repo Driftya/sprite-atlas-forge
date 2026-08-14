@@ -373,6 +373,8 @@ No `docs/concept/` assets currently exist in the repository. If concept images a
 - [x] Implement Phaser JSON Hash as the first consumer exporter after native v1 is stable.
 - [x] Map frame, source-size, trim, and atlas metadata explicitly in the Phaser adapter.
 - [x] Emit connectors, tags, and properties as documented ignorable custom per-frame Phaser metadata.
+- [x] Export Unity 6 multi-sprite texture import metadata beside the atlas PNG.
+- [x] Export Godot 4 `AtlasTexture` resources beside the atlas PNG.
 - [x] Never discard native-only metadata silently; report the custom-field policy in export diagnostics.
 
 ## 10. Delivery phases

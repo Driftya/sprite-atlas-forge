@@ -24,6 +24,30 @@ public sealed class WorkspacePageModelTests
         await Assert.That(model.NativeProjectExtension).IsEqualTo(".saf.json");
         await Assert.That(model.HasProject).IsFalse();
         await Assert.That(model.SpriteCountText).IsEqualTo("0 sprites");
+        await Assert.That(model.ExportFormats).IsEquivalentTo([
+            "native",
+            "phaser-json-hash",
+            "unity-6-spritesheet",
+            "godot-4-atlas-textures",
+        ]);
+    }
+
+    [Test]
+    public async Task Empty_workspace_save_as_and_export_are_safe_no_ops()
+    {
+        var service = new StubService(CreateProject());
+        var model = new WorkspacePageModel(
+            AtlasForgeApplicationInfo.Default,
+            service,
+            new StubSpriteImageExporter(),
+            new StubFilePicker());
+
+        await model.SaveAsCommand.ExecuteAsync(null);
+        await model.ExportCommand.ExecuteAsync(null);
+
+        await Assert.That(service.LastSaveAsDestination).IsNull();
+        await Assert.That(service.LastExportRequest).IsNull();
+        await Assert.That(model.IsBusy).IsFalse();
     }
 
     [Test]
