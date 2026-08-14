@@ -105,6 +105,11 @@
           "additionalProperties": {
             "type": ["null", "string", "number", "boolean"]
           }
+        },
+        "isApproved": { "type": "boolean" },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
         }
       },
       "additionalProperties": true

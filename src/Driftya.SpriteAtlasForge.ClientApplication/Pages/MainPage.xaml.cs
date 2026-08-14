@@ -4,6 +4,13 @@ using Controls;
 
 public partial class MainPage : ContentPage
 {
+    private async void OnSpriteApprovedChanged(object? sender, CheckedChangedEventArgs args)
+    {
+        if (BindingContext is WorkspacePageModel { IsBusy: false } model)
+        {
+            await model.SetSelectedSpriteApprovedAsync(args.Value);
+        }
+    }
     private double _canvasPanStartX;
     private double _canvasPanStartY;
     private double _canvasPanTargetX;
@@ -24,6 +31,23 @@ public partial class MainPage : ContentPage
         BindingContext = model;
         HandlerChanged += OnPlatformHandlerChanged;
         HandlerChanging += OnPlatformHandlerChanging;
+    }
+
+    private void OnAtlasHomeClicked(object? sender, EventArgs args)
+    {
+        AtlasScrollView.ScrollToAsync(0, 0, false);
+    }
+
+    private async void OnHelpClicked(object? sender, EventArgs args)
+    {
+        await DisplayAlertAsync(
+            "Canvas shortcuts",
+            "Arrow keys: nudge the selected border by one pixel\n" +
+            "Shift + drag: temporarily disable snapping and guides\n" +
+            "Right mouse button + drag: pan the canvas\n" +
+            "Right mouse button + wheel: zoom around the pointer\n" +
+            "Delete: remove the selected sprite when a text field is not focused",
+            "Done");
     }
 
     private async void OnOverlayCanvasTapped(object? sender, CanvasTappedEventArgs args)
@@ -151,6 +175,7 @@ public partial class MainPage : ContentPage
         }
 
         _platformView = platformView;
+        platformView.KeyDown += OnPageKeyDown;
         _deleteAccelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator
         {
             Key = Windows.System.VirtualKey.Delete,
@@ -195,8 +220,21 @@ public partial class MainPage : ContentPage
             _deleteAccelerator.Invoked -= OnDeleteAcceleratorInvoked;
         }
 
+        if (_platformView is not null)
+        {
+            _platformView.KeyDown -= OnPageKeyDown;
+        }
+
         _platformView = null;
         _deleteAccelerator = null;
+    }
+
+    private void OnPageKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs args)
+    {
+        if (OverlayView.TryNudgeSelectedBorder(args.Key))
+        {
+            args.Handled = true;
+        }
     }
 #endif
 

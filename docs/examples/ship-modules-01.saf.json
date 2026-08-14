@@ -31,7 +31,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_002",
@@ -49,7 +51,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_003",
@@ -67,7 +71,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_004",
@@ -85,7 +91,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_005",
@@ -103,7 +111,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_006",
@@ -121,7 +131,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_007",
@@ -139,7 +151,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_008",
@@ -157,7 +171,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_009",
@@ -175,7 +191,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_010",
@@ -193,7 +211,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_011",
@@ -211,7 +231,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_012",
@@ -229,7 +251,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_013",
@@ -247,7 +271,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_014",
@@ -265,7 +291,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_015",
@@ -283,7 +311,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_016",
@@ -301,7 +331,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_017",
@@ -319,7 +351,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_018",
@@ -337,7 +371,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_019",
@@ -355,7 +391,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_020",
@@ -373,7 +411,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_021",
@@ -391,7 +431,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_022",
@@ -409,7 +451,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_023",
@@ -427,7 +471,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_024",
@@ -445,7 +491,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_025",
@@ -463,7 +511,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_026",
@@ -481,7 +531,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_027",
@@ -499,7 +551,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_028",
@@ -517,7 +571,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_029",
@@ -535,7 +591,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_030",
@@ -553,7 +611,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_031",
@@ -571,7 +631,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_032",
@@ -589,7 +651,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_033",
@@ -607,7 +671,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_034",
@@ -625,7 +691,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_035",
@@ -643,7 +711,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_036",
@@ -661,7 +731,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_037",
@@ -679,7 +751,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_038",
@@ -697,7 +771,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_039",
@@ -715,7 +791,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_040",
@@ -733,7 +811,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_041",
@@ -751,25 +831,29 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_042",
       "sourceRegion": {
         "x": 1020,
         "y": 737,
-        "width": 187,
+        "width": 213,
         "height": 114
       },
       "frame": {
         "x": 1020,
         "y": 737,
-        "width": 187,
+        "width": 213,
         "height": 114
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_043",
@@ -787,7 +871,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_044",
@@ -805,7 +891,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_045",
@@ -823,7 +911,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_046",
@@ -841,7 +931,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_047",
@@ -859,7 +951,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_048",
@@ -877,43 +971,49 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_049",
       "sourceRegion": {
         "x": 885,
         "y": 855,
-        "width": 122,
+        "width": 146,
         "height": 117
       },
       "frame": {
         "x": 885,
         "y": 855,
-        "width": 122,
+        "width": 146,
         "height": 117
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_050",
       "sourceRegion": {
         "x": 744,
         "y": 857,
-        "width": 116,
+        "width": 117,
         "height": 114
       },
       "frame": {
         "x": 744,
         "y": 857,
-        "width": 116,
+        "width": 117,
         "height": 114
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_051",
@@ -931,7 +1031,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_052",
@@ -949,25 +1051,29 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_053",
       "sourceRegion": {
         "x": 1054,
         "y": 864,
-        "width": 161,
+        "width": 182,
         "height": 100
       },
       "frame": {
         "x": 1054,
         "y": 864,
-        "width": 161,
+        "width": 182,
         "height": 100
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_054",
@@ -985,7 +1091,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_055",
@@ -1003,7 +1111,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_056",
@@ -1021,7 +1131,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_057",
@@ -1039,7 +1151,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_058",
@@ -1057,7 +1171,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_059",
@@ -1075,7 +1191,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_060",
@@ -1093,7 +1211,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_061",
@@ -1111,7 +1231,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_062",
@@ -1129,7 +1251,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_063",
@@ -1147,7 +1271,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_064",
@@ -1165,7 +1291,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_065",
@@ -1183,7 +1311,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_066",
@@ -1201,7 +1331,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_067",
@@ -1219,7 +1351,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_068",
@@ -1237,7 +1371,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_069",
@@ -1255,7 +1391,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_070",
@@ -1273,7 +1411,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_071",
@@ -1291,7 +1431,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_072",
@@ -1309,7 +1451,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_073",
@@ -1327,7 +1471,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_074",
@@ -1345,7 +1491,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_075",
@@ -1363,7 +1511,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_076",
@@ -1381,7 +1531,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_077",
@@ -1399,7 +1551,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_078",
@@ -1417,7 +1571,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_079",
@@ -1435,7 +1591,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_080",
@@ -1453,7 +1611,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_081",
@@ -1471,7 +1631,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_082",
@@ -1489,7 +1651,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_083",
@@ -1507,7 +1671,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_084",
@@ -1525,7 +1691,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_085",
@@ -1543,7 +1711,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_086",
@@ -1561,7 +1731,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_087",
@@ -1579,7 +1751,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_088",
@@ -1597,7 +1771,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_089",
@@ -1615,7 +1791,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_090",
@@ -1633,7 +1811,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_091",
@@ -1651,7 +1831,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_092",
@@ -1669,7 +1851,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_093",
@@ -1687,7 +1871,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_094",
@@ -1705,7 +1891,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_095",
@@ -1723,7 +1911,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_096",
@@ -1741,7 +1931,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_097",
@@ -1759,7 +1951,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_098",
@@ -1777,7 +1971,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_099",
@@ -1795,7 +1991,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_100",
@@ -1813,7 +2011,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_101",
@@ -1831,7 +2031,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_102",
@@ -1849,7 +2051,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_103",
@@ -1867,7 +2071,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_104",
@@ -1885,7 +2091,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_105",
@@ -1903,7 +2111,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_106",
@@ -1921,7 +2131,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_107",
@@ -1939,7 +2151,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_108",
@@ -1957,7 +2171,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     },
     {
       "id": "sprite_109",
@@ -1975,7 +2191,9 @@
       },
       "connectors": [],
       "tags": [],
-      "properties": {}
+      "properties": {},
+      "isApproved": false,
+      "metadata": {}
     }
   ]
 }

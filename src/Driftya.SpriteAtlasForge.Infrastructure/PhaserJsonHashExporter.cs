@@ -81,7 +81,9 @@ public sealed class PhaserJsonHashExporter : IAtlasExporter
         public static PhaserDocument FromDomain(AtlasProject project, string imageFileName)
         {
             var frames = new SortedDictionary<string, PhaserFrame>(StringComparer.Ordinal);
-            foreach (var sprite in project.Sprites.OrderBy(sprite => sprite.Id, StringComparer.Ordinal))
+            foreach (var sprite in project.Sprites
+                .Where(sprite => sprite.IsApproved)
+                .OrderBy(sprite => sprite.Id, StringComparer.Ordinal))
             {
                 frames.Add(sprite.Id, PhaserFrame.FromDomain(sprite));
             }
@@ -128,6 +130,9 @@ public sealed class PhaserJsonHashExporter : IAtlasExporter
         [JsonPropertyOrder(7)]
         public required SortedDictionary<string, JsonElement> Properties { get; init; }
 
+        [JsonPropertyOrder(8)]
+        public required SortedDictionary<string, string> Metadata { get; init; }
+
         public static PhaserFrame FromDomain(AtlasSprite sprite) => new()
         {
             Frame = PhaserRect.FromDomain(sprite.Frame),
@@ -159,6 +164,9 @@ public sealed class PhaserJsonHashExporter : IAtlasExporter
                     property => property.Key,
                     property => JsonDefaults.ToJsonElement(property.Value),
                     StringComparer.Ordinal),
+                StringComparer.Ordinal),
+            Metadata = new SortedDictionary<string, string>(
+                sprite.Metadata.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal),
                 StringComparer.Ordinal),
         };
     }

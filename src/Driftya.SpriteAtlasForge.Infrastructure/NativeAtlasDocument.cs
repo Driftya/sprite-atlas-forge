@@ -192,6 +192,12 @@ internal sealed class NativeSpriteDocument
     [JsonPropertyOrder(5)]
     public SortedDictionary<string, JsonElement> Properties { get; set; } = new(StringComparer.Ordinal);
 
+    [JsonPropertyOrder(6)]
+    public bool IsApproved { get; set; }
+
+    [JsonPropertyOrder(7)]
+    public SortedDictionary<string, string> Metadata { get; set; } = new(StringComparer.Ordinal);
+
     public static NativeSpriteDocument FromDomain(AtlasSprite sprite) => new()
     {
         Id = sprite.Id,
@@ -209,6 +215,10 @@ internal sealed class NativeSpriteDocument
                 property => property.Key,
                 property => JsonDefaults.ToJsonElement(property.Value),
                 StringComparer.Ordinal),
+            StringComparer.Ordinal),
+        IsApproved = sprite.IsApproved,
+        Metadata = new SortedDictionary<string, string>(
+            sprite.Metadata.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal),
             StringComparer.Ordinal),
     };
 
@@ -237,7 +247,9 @@ internal sealed class NativeSpriteDocument
                 Properties.ToDictionary(
                     property => property.Key,
                     property => JsonDefaults.FromJsonElement(property.Value),
-                    StringComparer.Ordinal));
+                    StringComparer.Ordinal),
+                IsApproved,
+                Metadata);
         }
         catch (Exception exception) when (exception is ArgumentException or OverflowException)
         {

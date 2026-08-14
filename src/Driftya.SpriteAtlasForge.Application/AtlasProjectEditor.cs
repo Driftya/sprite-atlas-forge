@@ -42,7 +42,9 @@ public static class AtlasProjectEditor
             sprite.Frame,
             sprite.Connectors,
             sprite.Tags,
-            sprite.Properties);
+            sprite.Properties,
+            sprite.IsApproved,
+            sprite.Metadata);
 
         return ReplaceSprite(project, sprite.Id, renamed);
     }
@@ -90,6 +92,25 @@ public static class AtlasProjectEditor
             ? new PixelRect(sprite.Frame.X, sprite.Frame.Y, sourceRegion.Width, sourceRegion.Height)
             : sourceRegion;
         return project.ReplaceSprite(sprite.UpdateRegion(sourceRegion, frame));
+    }
+
+    public static AtlasProject SetSpriteApproved(AtlasProject project, string spriteId, bool approved)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        return project.ReplaceSprite(project.GetSprite(spriteId).SetApproved(approved));
+    }
+
+    public static AtlasProject AddSpriteMetadata(
+        AtlasProject project, string spriteId, string key, string value)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        return project.ReplaceSprite(project.GetSprite(spriteId).AddMetadata(key, value));
+    }
+
+    public static AtlasProject RemoveSpriteMetadata(AtlasProject project, string spriteId, string key)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        return project.ReplaceSprite(project.GetSprite(spriteId).RemoveMetadata(key));
     }
 
     private static AtlasProject ReplaceSprite(

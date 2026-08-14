@@ -21,6 +21,8 @@ Connector names and sprite IDs are case-insensitively unique within their respec
 
 The `properties` object holds game-specific primitive metadata. Version 1 supports null, string, number, and boolean values. Generic atlas behavior never interprets fields such as `position`, `weight`, or `minPopulation`.
 
+Each sprite may also have an `isApproved` boolean and a `metadata` object containing string/string key-value tags. Approval defaults to false when omitted. The Phaser exporter includes only approved sprites, allowing atlas export to be used safely for continuous delivery while sprites are still being reviewed.
+
 ## Repacking
 
 Original-sheet mode is the default and leaves pixels untouched. Repacking is explicit. A repacked descriptor records its algorithm, padding, power-of-two choice, and maximum dimensions under `atlas.packing`. Version 1 never rotates sprites. Connectors stay in logical sprite-local coordinates when frames move.
@@ -29,4 +31,4 @@ The current fallback algorithm is `deterministic-shelf-v1`. It is isolated behin
 
 ## Phaser JSON Hash export
 
-The Phaser exporter writes standard frame, source-size, trim, atlas-size, and image metadata. Native `connectors`, `tags`, and `properties` are included as additional per-frame JSON members so metadata is not silently discarded. Consumers that require a strict schema may ignore or strip those additive fields.
+The Phaser exporter writes standard frame, source-size, trim, atlas-size, and image metadata. It emits only sprites marked `isApproved`; native `connectors`, `tags`, `properties`, and `metadata` are included as additional per-frame JSON members so metadata is not silently discarded. Consumers that require a strict schema may ignore or strip those additive fields.

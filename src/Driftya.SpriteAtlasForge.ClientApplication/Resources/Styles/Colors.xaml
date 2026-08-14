@@ -6,6 +6,7 @@
     <Color x:Key="WindowColor">#111318</Color>
     <Color x:Key="PanelColor">#1A1D24</Color>
     <Color x:Key="CanvasColor">#0B0D11</Color>
+    <Color x:Key="InsetPanelColor">#222631</Color>
     <Color x:Key="BorderColor">#343A46</Color>
     <Color x:Key="PrimaryTextColor">#F4F6FA</Color>
     <Color x:Key="MutedTextColor">#AAB1BE</Color>

@@ -2,7 +2,7 @@
 
 Sprite Atlas Forge is a Windows-first reverse texture packer. It takes an existing PNG spritesheet with either transparency or a border-connected background, detects its sprites, lets users author connector metadata, saves a native `.saf.json` project, optionally repacks the image, and exports Phaser JSON Hash atlases.
 
-Phases 0–3 are implemented. The deterministic untrimmed repacker and Phaser exporter are also working. The Windows MAUI client supports open/detect/save/save-as, editable sprite regions, a zoomable/pannable atlas canvas with direct sprite selection and drag handles, click/drag plus numeric connector editing, dirty-state protection, undo/redo, validation, cancellable progress, repacking, and Phaser export.
+Phases 0–3 are implemented. The deterministic untrimmed repacker and Phaser exporter are also working. The Windows MAUI client supports open/detect/save/save-as, editable sprite regions, approval-gated Phaser export, string metadata tags, a zoomable/pannable atlas canvas with direct sprite selection and drag handles, click/drag plus numeric connector editing, dirty-state protection, undo/redo, validation, cancellable progress, repacking, and Phaser export.
 
 See [the implementation plan](docs/plans/reverse-texture-packer-implementation-plan.md) for the complete checklist and design decisions.
 

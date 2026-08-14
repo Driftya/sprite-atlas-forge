@@ -26,6 +26,11 @@
         <Setter Property="TextColor" Value="{StaticResource PrimaryTextColor}" />
     </Style>
 
+    <Style x:Key="EditorCheckBoxStyle" TargetType="CheckBox">
+        <Setter Property="Color" Value="{StaticResource AccentColor}" />
+        <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+
     <Style TargetType="Button">
         <Setter Property="BackgroundColor" Value="{StaticResource AccentColor}" />
         <Setter Property="CornerRadius" Value="6" />
@@ -67,6 +72,31 @@
 
     <Style x:Key="CanvasBorderStyle" TargetType="Border" BasedOn="{StaticResource PanelBorderStyle}">
         <Setter Property="BackgroundColor" Value="{StaticResource CanvasColor}" />
+    </Style>
+
+    <Style x:Key="InsetPanelStyle" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource InsetPanelColor}" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="Stroke" Value="{StaticResource BorderColor}" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 6" />
+        <Setter Property="StrokeThickness" Value="1" />
+    </Style>
+
+    <Style x:Key="CompactTextButtonStyle" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource AccentColor}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="MinimumHeightRequest" Value="28" />
+        <Setter Property="MinimumWidthRequest" Value="24" />
+        <Setter Property="Padding" Value="4,2" />
+    </Style>
+
+    <Style x:Key="ToolbarIconButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactTextButtonStyle}">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="MinimumHeightRequest" Value="32" />
+        <Setter Property="MinimumWidthRequest" Value="34" />
+        <Setter Property="Padding" Value="4,2" />
     </Style>
 
     <Style x:Key="PageTitleStyle" TargetType="Label">

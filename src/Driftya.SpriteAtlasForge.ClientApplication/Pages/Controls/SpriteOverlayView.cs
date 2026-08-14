@@ -78,7 +78,6 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
     private Microsoft.UI.Xaml.UIElement? _platformView;
     private uint? _rightPanPointerId;
     private Windows.Foundation.Point _rightPanOrigin;
-    private readonly List<Microsoft.UI.Xaml.Input.KeyboardAccelerator> _borderAccelerators = [];
 #endif
 
     public static readonly BindableProperty OverlaysProperty = BindableProperty.Create(
@@ -190,7 +189,11 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
             var selected = string.Equals(overlay.SpriteId, SelectedSpriteId, StringComparison.OrdinalIgnoreCase);
             var displayed = ScaleBounds(bounds, scale);
 
-            canvas.StrokeColor = selected ? Color.FromArgb("#FFD166") : Color.FromArgb("#77E09C");
+            canvas.StrokeColor = selected
+                ? Color.FromArgb("#FFD166")
+                : overlay.IsApproved
+                    ? Color.FromArgb("#77E09C")
+                    : Color.FromArgb("#6E8DFF");
             canvas.StrokeSize = selected ? 2 : 1;
             canvas.DrawRectangle(displayed);
 
@@ -269,7 +272,9 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
             var handle = HitTestHandle(ScaleBounds(CanvasPixelBounds.From(selected), EffectiveScale), _pressPoint);
             if (handle != CanvasResizeHandle.None)
             {
-                _selectedBorder = IsSingleBorder(handle) ? handle : CanvasResizeHandle.None;
+                _selectedBorder = IsSingleBorder(handle)
+                    ? _selectedBorder == handle ? CanvasResizeHandle.None : handle
+                    : CanvasResizeHandle.None;
                 _resizedSprite = selected;
                 _resizeHandle = handle;
                 _previewBounds = CanvasPixelBounds.From(selected);
@@ -365,6 +370,8 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         _moved = false;
         Invalidate();
     }
+
+    public bool TryNudgeSelectedBorder(Windows.System.VirtualKey key) => NudgeSelectedBorder(key);
 
     private bool NudgeSelectedBorder(Windows.System.VirtualKey key)
     {
@@ -587,19 +594,6 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         platformView.PointerCanceled += OnPlatformPointerCanceled;
         platformView.PointerCaptureLost += OnPlatformPointerCaptureLost;
         platformView.PointerWheelChanged += OnPlatformPointerWheelChanged;
-        foreach (var key in new[]
-                 {
-                     Windows.System.VirtualKey.Left,
-                     Windows.System.VirtualKey.Right,
-                     Windows.System.VirtualKey.Up,
-                     Windows.System.VirtualKey.Down,
-                 })
-        {
-            var accelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = key };
-            accelerator.Invoked += OnBorderAcceleratorInvoked;
-            _borderAccelerators.Add(accelerator);
-            platformView.KeyboardAccelerators.Add(accelerator);
-        }
     }
 
     private void DetachPlatformPointerHandlers()
@@ -615,24 +609,8 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         _platformView.PointerCanceled -= OnPlatformPointerCanceled;
         _platformView.PointerCaptureLost -= OnPlatformPointerCaptureLost;
         _platformView.PointerWheelChanged -= OnPlatformPointerWheelChanged;
-        foreach (var accelerator in _borderAccelerators)
-        {
-            _platformView.KeyboardAccelerators.Remove(accelerator);
-            accelerator.Invoked -= OnBorderAcceleratorInvoked;
-        }
-        _borderAccelerators.Clear();
         _platformView = null;
         _rightPanPointerId = null;
-    }
-
-    private void OnBorderAcceleratorInvoked(
-        Microsoft.UI.Xaml.Input.KeyboardAccelerator sender,
-        Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
-    {
-        if (NudgeSelectedBorder(sender.Key))
-        {
-            args.Handled = true;
-        }
     }
 
     private void OnPlatformPointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args)

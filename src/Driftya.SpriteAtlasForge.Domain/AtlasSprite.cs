@@ -10,7 +10,9 @@ public sealed record AtlasSprite
         PixelRect frame,
         IEnumerable<AtlasConnector>? connectors = null,
         IEnumerable<string>? tags = null,
-        IReadOnlyDictionary<string, AtlasPropertyValue>? properties = null)
+        IReadOnlyDictionary<string, AtlasPropertyValue>? properties = null,
+        bool isApproved = false,
+        IReadOnlyDictionary<string, string>? metadata = null)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -20,6 +22,7 @@ public sealed record AtlasSprite
         Id = id.Trim();
         SourceRegion = sourceRegion;
         Frame = frame;
+        IsApproved = isApproved;
 
         var connectorArray = connectors?.ToArray() ?? [];
         var duplicateConnector = connectorArray
@@ -66,6 +69,20 @@ public sealed record AtlasSprite
         }
 
         Properties = new ReadOnlyDictionary<string, AtlasPropertyValue>(propertyMap);
+
+        var metadataMap = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        foreach (var entry in metadata ?? new Dictionary<string, string>())
+        {
+            if (string.IsNullOrWhiteSpace(entry.Key))
+            {
+                throw new ArgumentException("Metadata keys cannot be empty.", nameof(metadata));
+            }
+
+            metadataMap.Add(entry.Key.Trim(), entry.Value ?? throw new ArgumentException(
+                "Metadata values cannot be null.", nameof(metadata)));
+        }
+
+        Metadata = new ReadOnlyDictionary<string, string>(metadataMap);
     }
 
     public string Id { get; }
@@ -74,14 +91,33 @@ public sealed record AtlasSprite
 
     public PixelRect Frame { get; }
 
+    public bool IsApproved { get; }
+
     public IReadOnlyList<AtlasConnector> Connectors { get; }
 
     public IReadOnlyList<string> Tags { get; }
 
     public IReadOnlyDictionary<string, AtlasPropertyValue> Properties { get; }
 
+    public IReadOnlyDictionary<string, string> Metadata { get; }
+
+    public AtlasSprite SetApproved(bool isApproved) =>
+        new(Id, SourceRegion, Frame, Connectors, Tags, Properties, isApproved, Metadata);
+
+    public AtlasSprite AddMetadata(string key, string value)
+    {
+        var updated = Metadata.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
+        updated.Add(key, value);
+        return new(Id, SourceRegion, Frame, Connectors, Tags, Properties, IsApproved, updated);
+    }
+
+    public AtlasSprite RemoveMetadata(string key) =>
+        new(Id, SourceRegion, Frame, Connectors, Tags, Properties, IsApproved,
+            Metadata.Where(entry => !string.Equals(entry.Key, key, StringComparison.Ordinal)).
+                ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal));
+
     public AtlasSprite AddConnector(AtlasConnector connector) =>
-        new(Id, SourceRegion, Frame, Connectors.Append(connector), Tags, Properties);
+        new(Id, SourceRegion, Frame, Connectors.Append(connector), Tags, Properties, IsApproved, Metadata);
 
     public AtlasSprite UpdateConnector(string currentName, AtlasConnector connector)
     {
@@ -103,11 +139,13 @@ public sealed record AtlasSprite
                     ? connector
                     : candidate),
             Tags,
-            Properties);
+            Properties,
+            IsApproved,
+            Metadata);
     }
 
     public AtlasSprite UpdateRegion(PixelRect sourceRegion, PixelRect frame) =>
-        new(Id, sourceRegion, frame, Connectors, Tags, Properties);
+        new(Id, sourceRegion, frame, Connectors, Tags, Properties, IsApproved, Metadata);
 
     public AtlasSprite RemoveConnector(string name) =>
         new(
@@ -116,5 +154,7 @@ public sealed record AtlasSprite
             Frame,
             Connectors.Where(connector => !string.Equals(connector.Name, name, StringComparison.OrdinalIgnoreCase)),
             Tags,
-            Properties);
+            Properties,
+            IsApproved,
+            Metadata);
 }

@@ -18,7 +18,10 @@ public sealed record SpriteCanvasOverlay(
     double X,
     double Y,
     double Width,
-    double Height);
+    double Height,
+    bool IsApproved = false);
+
+public sealed record SpriteMetadataEntry(string Key, string Value);
 
 public sealed record ConnectorCanvasOverlay(
     string Name,
@@ -35,6 +38,7 @@ public partial class WorkspacePageModel : ObservableObject
     private readonly Stack<EditorSnapshot> _undoHistory = [];
     private readonly Stack<EditorSnapshot> _redoHistory = [];
     private CancellationTokenSource? _activeOperation;
+    private bool _refreshingSelection;
 
     public WorkspacePageModel(
         AtlasForgeApplicationInfo applicationInfo,
@@ -63,6 +67,8 @@ public partial class WorkspacePageModel : ObservableObject
     public ObservableCollection<SpriteCanvasOverlay> SpriteOverlays { get; } = [];
 
     public ObservableCollection<ConnectorCanvasOverlay> ConnectorOverlays { get; } = [];
+
+    public ObservableCollection<SpriteMetadataEntry> SelectedSpriteMetadata { get; } = [];
 
     public IReadOnlyList<string> ExportFormats { get; } = ["native", "phaser-json-hash"];
 
@@ -176,6 +182,15 @@ public partial class WorkspacePageModel : ObservableObject
     public partial string SpriteIdDraft { get; set; } = string.Empty;
 
     [ObservableProperty]
+    public partial bool IsSelectedSpriteApproved { get; set; }
+
+    [ObservableProperty]
+    public partial string NewMetadataKey { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string NewMetadataValue { get; set; } = string.Empty;
+
+    [ObservableProperty]
     public partial int SourceRegionX { get; set; }
 
     [ObservableProperty]
@@ -205,13 +220,77 @@ public partial class WorkspacePageModel : ObservableObject
 
     partial void OnSelectedSpriteChanged(AtlasSprite? value)
     {
+        _refreshingSelection = true;
         SpriteIdDraft = value?.Id ?? string.Empty;
+        IsSelectedSpriteApproved = value?.IsApproved ?? false;
         SourceRegionX = value?.SourceRegion.X ?? 0;
         SourceRegionY = value?.SourceRegion.Y ?? 0;
         SourceRegionWidth = value?.SourceRegion.Width ?? 0;
         SourceRegionHeight = value?.SourceRegion.Height ?? 0;
         SelectedConnector = null;
+        SelectedSpriteMetadata.Clear();
+        if (value is not null)
+        {
+            foreach (var entry in value.Metadata)
+            {
+                SelectedSpriteMetadata.Add(new SpriteMetadataEntry(entry.Key, entry.Value));
+            }
+        }
+        _refreshingSelection = false;
         RefreshCanvasOverlays();
+    }
+
+    public Task SetSelectedSpriteApprovedAsync(bool approved, CancellationToken cancellationToken = default)
+    {
+        if (_refreshingSelection || CurrentProject is null || SelectedSprite is null ||
+            SelectedSprite.IsApproved == approved)
+        {
+            return Task.CompletedTask;
+        }
+
+        var selectedId = SelectedSprite.Id;
+        return ApplyEditAsync(
+            () => AtlasProjectEditor.SetSpriteApproved(CurrentProject, selectedId, approved),
+            selectedId,
+            null,
+            approved ? "Sprite approved for export." : "Sprite approval removed.",
+            cancellationToken);
+    }
+
+    [RelayCommand]
+    private Task AddMetadataAsync(CancellationToken cancellationToken)
+    {
+        if (CurrentProject is null || SelectedSprite is null || string.IsNullOrWhiteSpace(NewMetadataKey))
+        {
+            Status = "Enter a metadata key before adding it.";
+            return Task.CompletedTask;
+        }
+
+        var selectedId = SelectedSprite.Id;
+        return ApplyEditAsync(
+            () => AtlasProjectEditor.AddSpriteMetadata(CurrentProject, selectedId, NewMetadataKey, NewMetadataValue),
+            selectedId,
+            null,
+            "Metadata added.",
+            cancellationToken,
+            () => { NewMetadataKey = string.Empty; NewMetadataValue = string.Empty; });
+    }
+
+    [RelayCommand]
+    private Task RemoveMetadataAsync(SpriteMetadataEntry? entry, CancellationToken cancellationToken)
+    {
+        if (CurrentProject is null || SelectedSprite is null || entry is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var selectedId = SelectedSprite.Id;
+        return ApplyEditAsync(
+            () => AtlasProjectEditor.RemoveSpriteMetadata(CurrentProject, selectedId, entry.Key),
+            selectedId,
+            null,
+            "Metadata removed.",
+            cancellationToken);
     }
 
     partial void OnSelectedConnectorChanged(AtlasConnector? value)
@@ -788,7 +867,8 @@ public partial class WorkspacePageModel : ObservableObject
                 sprite.Frame.X,
                 sprite.Frame.Y,
                 sprite.Frame.Width,
-                sprite.Frame.Height));
+                sprite.Frame.Height,
+                sprite.IsApproved));
         }
 
         RefreshConnectorOverlays();
