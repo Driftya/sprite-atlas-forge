@@ -1,4 +1,13 @@
-﻿# Sprite Atlas Forge
+﻿<p align="center">
+  <img src="docs/assets/icon/icon.png" alt="Sprite Atlas Forge logo" width="160">
+</p>
+
+# Sprite Atlas Forge
+
+[![CI](https://github.com/Driftya/sprite-atlas-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/Driftya/sprite-atlas-forge/actions/workflows/ci.yml)
+[![Release](https://github.com/Driftya/sprite-atlas-forge/actions/workflows/release.yml/badge.svg)](https://github.com/Driftya/sprite-atlas-forge/actions/workflows/release.yml)
+[![Tests](https://img.shields.io/badge/tests-103%2F103%20passed-brightgreen)](https://github.com/Driftya/sprite-atlas-forge/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Driftya/sprite-atlas-forge?display_name=tag&sort=semver&label=release)](https://github.com/Driftya/sprite-atlas-forge/releases/latest)
 
 Sprite Atlas Forge is a Windows-first reverse texture packer. It takes an existing PNG spritesheet with either transparency or a border-connected background, detects its sprites, lets users author connector metadata, saves a native `.saf.json` project, optionally repacks the image, and exports Phaser, Unity 6, and Godot 4 atlases.
 
