@@ -5,8 +5,6 @@ Repository guidance for engineers and coding agents.
 ## Documentation Source of Truth
 
 1. Start with `README.md` for current architecture/runtime entry points.
-2. Use `docs/idea.md` for product intent, implemented gameplay rules, and UX direction.
-3. Use `docs/concept/` images when making UI/UX updates so implementation stays aligned with concept direction.
 4. Use `CONTRIBUTING.md` (root) for engineering standards and coding principles.
 
 ## Where New Documentation Goes
@@ -24,7 +22,6 @@ Repository guidance for engineers and coding agents.
 When changing behavior or UI flows:
 
 1. Update code.
-2. Update `docs/idea.md` if product behavior changed.
 3. Update `README.md` if endpoints, architecture, setup, or user-visible capabilities changed.
 4. If applicable, add/update supporting docs under `docs/`.
 
