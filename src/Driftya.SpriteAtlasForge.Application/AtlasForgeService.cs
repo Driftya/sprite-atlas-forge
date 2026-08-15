@@ -185,6 +185,41 @@ public sealed class AtlasForgeService : IAtlasForgeService
         return updated;
     }
 
+    public async Task<PixelRect> RecoverSpriteDetailsAsync(
+        string imagePath,
+        AtlasProject project,
+        string spriteId,
+        SpriteDetectionOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentException.ThrowIfNullOrWhiteSpace(spriteId);
+        ArgumentNullException.ThrowIfNull(options);
+
+        var selected = project.GetSprite(spriteId);
+        var detection = await _spriteDetector.DetectAsync(
+            imagePath,
+            options with { BackgroundMode = SpriteBackgroundMode.Auto, RecoverDetachedDetails = true },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+        var match = detection.Regions
+            .Select(region => (Region: region, Overlap: OverlapArea(region, selected.SourceRegion)))
+            .Where(candidate => candidate.Overlap > 0)
+            .OrderByDescending(candidate => candidate.Overlap)
+            .ThenBy(candidate => candidate.Region.Area)
+            .FirstOrDefault();
+        return match.Overlap == 0
+            ? selected.SourceRegion
+            : selected.SourceRegion.Union(match.Region);
+    }
+
+    private static int OverlapArea(PixelRect first, PixelRect second)
+    {
+        var width = Math.Max(0, Math.Min(first.Right, second.Right) - Math.Max(first.X, second.X));
+        var height = Math.Max(0, Math.Min(first.Bottom, second.Bottom) - Math.Max(first.Y, second.Y));
+        return checked(width * height);
+    }
+
     public async Task<RepackAtlasResult> RepackAsync(
         RepackAtlasRequest request,
         IProgress<AtlasProgress>? progress = null,

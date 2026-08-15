@@ -165,6 +165,9 @@ public partial class WorkspacePageModel : ObservableObject
     public partial int DetectionSourcePadding { get; set; }
 
     [ObservableProperty]
+    public partial bool DetectionRecoverDetachedDetails { get; set; }
+
+    [ObservableProperty]
     public partial string SelectedExportFormat { get; set; } = "phaser-json-hash";
 
     [ObservableProperty]
@@ -514,6 +517,40 @@ public partial class WorkspacePageModel : ObservableObject
             null,
             "Sprite region updated.",
             cancellationToken);
+    }
+
+    [RelayCommand]
+    private Task RecoverSelectedSpriteDetailsAsync(CancellationToken cancellationToken)
+    {
+        if (CurrentProject is null || CurrentProject.Atlas.Repacked ||
+            SelectedSprite is null || string.IsNullOrWhiteSpace(CurrentImagePath))
+        {
+            return Task.CompletedTask;
+        }
+
+        var selectedId = SelectedSprite.Id;
+        return RunBusyAsync(async token =>
+        {
+            var recovered = await _atlasForgeService.RecoverSpriteDetailsAsync(
+                CurrentImagePath,
+                CurrentProject,
+                selectedId,
+                CreateDetectionOptions(),
+                token);
+            if (recovered == SelectedSprite.SourceRegion)
+            {
+                Status = "No unambiguous detached details found for the selected sprite.";
+                return;
+            }
+
+            _undoHistory.Push(CreateSnapshot());
+            var updated = AtlasProjectEditor.UpdateSpriteRegion(CurrentProject, selectedId, recovered);
+            _redoHistory.Clear();
+            SetProject(updated, selectedId, null);
+            IsDirty = true;
+            Status = "Recovered detached details for the selected sprite.";
+            NotifyHistoryChanged();
+        }, cancellationToken);
     }
 
     [RelayCommand]
@@ -968,6 +1005,7 @@ public partial class WorkspacePageModel : ObservableObject
             MergeDistance = DetectionMergeDistance,
             NoiseReductionRadius = DetectionNoiseReductionRadius,
             SourcePadding = DetectionSourcePadding,
+            RecoverDetachedDetails = DetectionRecoverDetachedDetails,
         };
         options.Validate();
         return options;

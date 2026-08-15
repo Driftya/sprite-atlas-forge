@@ -135,6 +135,58 @@ public sealed class SkiaSpriteDetectorTests
     }
 
     [Test]
+    public async Task Auto_detached_detail_recovery_uses_the_unfiltered_silhouette_when_enabled()
+    {
+        using var directory = new TestDirectory();
+        var path = directory.GetPath("detached-detail-third-pass.png");
+        WritePng(path, 30, 14, bitmap =>
+        {
+            Fill(bitmap, 2, 3, 6, 7, SKColors.White);
+            Fill(bitmap, 20, 5, 1, 3, SKColors.DeepSkyBlue);
+        });
+        var detector = new SkiaSpriteDetector();
+        var options = new SpriteDetectionOptions
+        {
+            MinimumArea = 20,
+            MergeDistance = 2,
+            NoiseReductionRadius = 1,
+        };
+
+        var normal = await detector.DetectAsync(path, options);
+        var recovered = await detector.DetectAsync(path, options with { RecoverDetachedDetails = true });
+
+        await Assert.That(normal.Regions).IsEquivalentTo([new PixelRect(2, 3, 6, 7)]);
+        await Assert.That(recovered.Regions).IsEquivalentTo([new PixelRect(2, 3, 19, 7)]);
+    }
+
+    [Test]
+    public async Task Auto_detached_detail_recovery_does_not_attach_an_ambiguous_fragment()
+    {
+        using var directory = new TestDirectory();
+        var path = directory.GetPath("ambiguous-detached-detail.png");
+        WritePng(path, 40, 14, bitmap =>
+        {
+            Fill(bitmap, 2, 3, 6, 7, SKColors.White);
+            Fill(bitmap, 18, 5, 1, 3, SKColors.DeepSkyBlue);
+            Fill(bitmap, 29, 3, 6, 7, SKColors.White);
+        });
+        var detector = new SkiaSpriteDetector();
+
+        var result = await detector.DetectAsync(path, new SpriteDetectionOptions
+        {
+            MinimumArea = 20,
+            MergeDistance = 2,
+            NoiseReductionRadius = 1,
+            RecoverDetachedDetails = true,
+        });
+
+        await Assert.That(result.Regions).IsEquivalentTo([
+            new PixelRect(2, 3, 6, 7),
+            new PixelRect(29, 3, 6, 7),
+        ]);
+    }
+
+    [Test]
     public async Task Detection_rejects_non_PNG_input()
     {
         using var directory = new TestDirectory();
@@ -467,6 +519,21 @@ public sealed class SkiaSpriteDetectorTests
         await Assert.That(result.Regions).Contains(new PixelRect(170, 1057, 120, 88));
         await Assert.That(result.Regions).Contains(new PixelRect(1156, 1067, 62, 89));
         await Assert.That(result.Regions).Contains(new PixelRect(1206, 1082, 13, 55));
+    }
+
+    [Test]
+    public async Task Auto_detached_detail_recovery_restores_the_real_ship_module_ornaments()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "ship-modules-01.png");
+        var detector = new SkiaSpriteDetector();
+
+        var result = await detector.DetectAsync(
+            path,
+            new SpriteDetectionOptions { RecoverDetachedDetails = true });
+
+        await Assert.That(result.Regions).Count().IsEqualTo(109);
+        await Assert.That(result.Regions).Contains(new PixelRect(273, 356, 222, 123));
+        await Assert.That(result.Regions).DoesNotContain(new PixelRect(280, 369, 211, 98));
     }
 
     [Test]

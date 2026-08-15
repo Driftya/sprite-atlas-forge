@@ -359,6 +359,26 @@ public sealed class WorkspacePageModelTests
     }
 
     [Test]
+    public async Task Recover_selected_sprite_details_expands_the_region_and_supports_undo()
+    {
+        var project = CreateProject();
+        var service = new StubService(project)
+        {
+            RecoveredRegion = new PixelRect(0, 0, 14, 10),
+        };
+        var model = CreateLoadedModel(service, project);
+        model.CurrentImagePath = "source.png";
+
+        await model.RecoverSelectedSpriteDetailsCommand.ExecuteAsync(null);
+
+        await Assert.That(model.SelectedSprite!.SourceRegion).IsEqualTo(new PixelRect(0, 0, 14, 10));
+        await Assert.That(model.Status).IsEqualTo("Recovered detached details for the selected sprite.");
+        await Assert.That(model.IsDirty).IsTrue();
+        model.UndoCommand.Execute(null);
+        await Assert.That(model.SelectedSprite!.SourceRegion).IsEqualTo(new PixelRect(0, 0, 10, 8));
+    }
+
+    [Test]
     public async Task Canvas_connector_coordinates_round_trip_through_zoom_transform()
     {
         var project = CreateProject();
@@ -483,6 +503,7 @@ public sealed class WorkspacePageModelTests
         public int LoadCount { get; private set; }
         public int SaveCount { get; private set; }
         public int ValidateCount { get; private set; }
+        public PixelRect RecoveredRegion { get; init; } = project.Sprites[0].SourceRegion;
 
         public Task<AtlasProject> DetectAsync(
             DetectAtlasRequest request,
@@ -575,6 +596,13 @@ public sealed class WorkspacePageModelTests
         public Task<AtlasProject> UpdateSpriteRegionAsync(
             UpdateSpriteRegionRequest request,
             CancellationToken cancellationToken = default) => Task.FromResult(ResultProject);
+
+        public Task<PixelRect> RecoverSpriteDetailsAsync(
+            string imagePath,
+            AtlasProject atlasProject,
+            string spriteId,
+            SpriteDetectionOptions options,
+            CancellationToken cancellationToken = default) => Task.FromResult(RecoveredRegion);
 
         public Task<RepackAtlasResult> RepackAsync(
             RepackAtlasRequest request,

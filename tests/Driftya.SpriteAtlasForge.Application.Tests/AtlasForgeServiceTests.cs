@@ -80,6 +80,25 @@ public sealed class AtlasForgeServiceTests
     }
 
     [Test]
+    public async Task Selected_sprite_recovery_returns_an_expanded_matching_region()
+    {
+        var project = CreateProject();
+        var detector = new StubDetector(new DetectedSpriteSheet(
+            project.Source.Size,
+            new string('a', 64),
+            [new PixelRect(0, 0, 14, 10)]));
+        var service = CreateService(new MemoryProjectStore(), detector);
+
+        var recovered = await service.RecoverSpriteDetailsAsync(
+            "modules.png",
+            project,
+            "module",
+            new SpriteDetectionOptions());
+
+        await Assert.That(recovered).IsEqualTo(new PixelRect(0, 0, 14, 10));
+    }
+
+    [Test]
     public async Task Save_as_copies_each_distinct_asset_and_writes_the_destination_descriptor()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));

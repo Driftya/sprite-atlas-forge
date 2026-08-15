@@ -70,6 +70,10 @@ public sealed class AtlasForgeCli
             Description = "Maximum per-channel border-background color step, 0-255 (default: 12).",
         };
         var sourcePadding = new Option<int?>("--source-padding") { Description = "Padding added around detected regions (default: 0)." };
+        var recoverDetachedDetails = new Option<bool>("--recover-detached-details")
+        {
+            Description = "In Auto mode, extend unique-owner detached-detail recovery to 16 pixels.",
+        };
         var maximumWidth = new Option<int?>("--max-width") { Description = "Maximum source width (default: 16384)." };
         var maximumHeight = new Option<int?>("--max-height") { Description = "Maximum source height (default: 16384)." };
         var maximumPixels = new Option<long?>("--max-pixels") { Description = "Maximum source pixel count (default: 67108864)." };
@@ -85,6 +89,7 @@ public sealed class AtlasForgeCli
         command.Options.Add(backgroundMode);
         command.Options.Add(backgroundTolerance);
         command.Options.Add(sourcePadding);
+        command.Options.Add(recoverDetachedDetails);
         command.Options.Add(maximumWidth);
         command.Options.Add(maximumHeight);
         command.Options.Add(maximumPixels);
@@ -108,6 +113,7 @@ public sealed class AtlasForgeCli
                 BackgroundColorTolerance = parseResult.GetValue(backgroundTolerance) ??
                     SpriteDetectionOptions.DefaultBackgroundColorTolerance,
                 SourcePadding = parseResult.GetValue(sourcePadding) ?? 0,
+                RecoverDetachedDetails = parseResult.GetValue(recoverDetachedDetails),
                 MaximumWidth = parseResult.GetValue(maximumWidth) ?? 16_384,
                 MaximumHeight = parseResult.GetValue(maximumHeight) ?? 16_384,
                 MaximumPixels = parseResult.GetValue(maximumPixels) ?? 67_108_864,

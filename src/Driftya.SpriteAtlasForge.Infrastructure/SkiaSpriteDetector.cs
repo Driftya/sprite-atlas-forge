@@ -66,6 +66,11 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
                 options.BackgroundColorTolerance,
                 cancellationToken)
             : BuildVisibleMask(bitmap, size, (byte)effectiveAlphaThreshold, cancellationToken);
+        var detachedDetailMask = options.RecoverDetachedDetails
+            ? useBorderRemoval
+                ? (byte[])mask.Clone()
+                : BuildVisibleMask(bitmap, size, options.AlphaThreshold, cancellationToken)
+            : null;
         if (useBorderRemoval)
         {
             progress?.Report(new("background", 0.05, "Removing opaque background connected to the image border."));
@@ -130,6 +135,18 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
                 attachmentDistance: options.BackgroundMode == SpriteBackgroundMode.Auto ? 8 : null);
         }
 
+        if (detachedDetailMask is not null && options.BackgroundMode == SpriteBackgroundMode.Auto)
+        {
+            progress?.Report(new("recover", 0.85, "Recovering unambiguous detached sprite details."));
+            regions = RecoverDetachedDetails(
+                detachedDetailMask,
+                size,
+                regions,
+                options.MinimumArea,
+                SpriteDetectionOptions.DetachedDetailRecoveryDistance,
+                cancellationToken);
+        }
+
         var merged = regions
             .Select(region => region.Expand(options.SourcePadding, size))
             .Distinct()
@@ -140,6 +157,138 @@ public sealed class SkiaSpriteDetector : ISpriteDetector
             .ToArray();
 
         return new DetectedSpriteSheet(size, sha256, merged);
+    }
+
+    private static IReadOnlyList<PixelRect> RecoverDetachedDetails(
+        byte[] sourceMask,
+        PixelSize size,
+        IReadOnlyList<PixelRect> trustedRegions,
+        int minimumArea,
+        int attachmentDistance,
+        CancellationToken cancellationToken)
+    {
+        if (trustedRegions.Count == 0)
+        {
+            return trustedRegions;
+        }
+
+        var protectedPixels = new bool[sourceMask.Length];
+        foreach (var region in trustedRegions)
+        {
+            for (var y = region.Y; y < region.Bottom; y++)
+            {
+                Array.Fill(
+                    protectedPixels,
+                    true,
+                    checked(y * size.Width + region.X),
+                    region.Width);
+            }
+        }
+
+        var owners = Enumerable.Repeat(-2, sourceMask.Length).ToArray();
+        var bestDistanceSquared = Enumerable.Repeat(int.MaxValue, sourceMask.Length).ToArray();
+        var maximumDistanceSquared = checked(attachmentDistance * attachmentDistance);
+        for (var owner = 0; owner < trustedRegions.Count; owner++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var region = trustedRegions[owner];
+            var searchBounds = region.Expand(attachmentDistance, size);
+            for (var y = searchBounds.Y; y < searchBounds.Bottom; y++)
+            {
+                for (var x = searchBounds.X; x < searchBounds.Right; x++)
+                {
+                    var index = checked(y * size.Width + x);
+                    if (sourceMask[index] == 0 || protectedPixels[index])
+                    {
+                        continue;
+                    }
+
+                    var deltaX = x < region.X
+                        ? region.X - x
+                        : x >= region.Right
+                            ? x - region.Right + 1
+                            : 0;
+                    var deltaY = y < region.Y
+                        ? region.Y - y
+                        : y >= region.Bottom
+                            ? y - region.Bottom + 1
+                            : 0;
+                    var distanceSquared = checked(deltaX * deltaX + deltaY * deltaY);
+                    if (distanceSquared > maximumDistanceSquared)
+                    {
+                        continue;
+                    }
+
+                    if (distanceSquared < bestDistanceSquared[index])
+                    {
+                        bestDistanceSquared[index] = distanceSquared;
+                        owners[index] = owner;
+                    }
+                    else if (distanceSquared == bestDistanceSquared[index] && owners[index] != owner)
+                    {
+                        owners[index] = -1;
+                    }
+                }
+            }
+        }
+
+        var recovered = trustedRegions.ToArray();
+        var queue = new Queue<int>();
+        for (var y = 0; y < size.Height; y++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            for (var x = 0; x < size.Width; x++)
+            {
+                var start = checked(y * size.Width + x);
+                var owner = owners[start];
+                if (owner < 0)
+                {
+                    continue;
+                }
+
+                var component = new ComponentAccumulator();
+                owners[start] = -2;
+                queue.Enqueue(start);
+                while (queue.TryDequeue(out var index))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var currentX = index % size.Width;
+                    var currentY = index / size.Width;
+                    component.Include(currentX, currentY);
+                    Enqueue(currentX - 1, currentY);
+                    Enqueue(currentX + 1, currentY);
+                    Enqueue(currentX, currentY - 1);
+                    Enqueue(currentX, currentY + 1);
+                }
+
+                var maximumDetailPixels = Math.Max(
+                    minimumArea,
+                    trustedRegions[owner].Area / 3);
+                if (component.PixelCount >= 2 && component.PixelCount <= maximumDetailPixels)
+                {
+                    recovered[owner] = recovered[owner].Union(component.Bounds);
+                }
+
+                void Enqueue(int candidateX, int candidateY)
+                {
+                    if (candidateX < 0 || candidateY < 0 || candidateX >= size.Width || candidateY >= size.Height)
+                    {
+                        return;
+                    }
+
+                    var candidate = checked(candidateY * size.Width + candidateX);
+                    if (owners[candidate] != owner)
+                    {
+                        return;
+                    }
+
+                    owners[candidate] = -2;
+                    queue.Enqueue(candidate);
+                }
+            }
+        }
+
+        return recovered;
     }
 
     private static byte[] BuildVisibleMask(

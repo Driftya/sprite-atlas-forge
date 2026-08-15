@@ -33,6 +33,14 @@ public interface IAtlasForgeService
         UpdateSpriteRegionRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<PixelRect> RecoverSpriteDetailsAsync(
+        string imagePath,
+        AtlasProject project,
+        string spriteId,
+        SpriteDetectionOptions options,
+        CancellationToken cancellationToken = default) =>
+        Task.FromException<PixelRect>(new NotSupportedException("Selected-sprite recovery is not supported."));
+
     Task<RepackAtlasResult> RepackAsync(
         RepackAtlasRequest request,
         IProgress<AtlasProgress>? progress = null,

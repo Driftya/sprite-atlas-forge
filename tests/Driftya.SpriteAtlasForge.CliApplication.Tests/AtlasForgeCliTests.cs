@@ -40,6 +40,7 @@ public sealed class AtlasForgeCliTests
             "--source-padding", "1", "--max-width", "2048", "--max-height", "1024",
             "--max-pixels", "1000000", "--noise-reduction-radius", "2",
             "--background-mode", "border-connected", "--background-tolerance", "15", "--json",
+            "--recover-detached-details",
         ]).InvokeAsync();
 
         await Assert.That(exitCode).IsEqualTo(0);
@@ -53,6 +54,7 @@ public sealed class AtlasForgeCliTests
         await Assert.That(service.LastDetectRequest.Options.BackgroundMode)
             .IsEqualTo(SpriteBackgroundMode.BorderConnected);
         await Assert.That(service.LastDetectRequest.Options.BackgroundColorTolerance).IsEqualTo(15);
+        await Assert.That(service.LastDetectRequest.Options.RecoverDetachedDetails).IsTrue();
         await Assert.That(service.LastDetectRequest.Options.MaximumWidth).IsEqualTo(2048);
         await Assert.That(service.LastDetectRequest.Options.MaximumHeight).IsEqualTo(1024);
         await Assert.That(service.LastDetectRequest.Options.MaximumPixels).IsEqualTo(1_000_000);

@@ -10,6 +10,7 @@
 
 ## 2026-08-15
 
+- Added opt-in Auto detached-detail recovery over the original low-alpha silhouette, plus an undoable selected-sprite recovery action; nearby details are assigned to their nearest unambiguous sprite.
 - Kept the Delete keyboard shortcut while hiding WinUI's transient accelerator hint, and added Left/Right navigation to cycle between sprites when no canvas border is selected.
 
 ## 2026-08-14

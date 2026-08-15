@@ -19,6 +19,8 @@ public sealed record SpriteDetectionOptions
 
     public const int DefaultBackgroundColorTolerance = 12;
 
+    public const int DetachedDetailRecoveryDistance = 16;
+
     public SpriteBackgroundMode BackgroundMode { get; init; } = SpriteBackgroundMode.Auto;
 
     /// <summary>
@@ -39,6 +41,8 @@ public sealed record SpriteDetectionOptions
     public int NoiseReductionRadius { get; init; } = DefaultNoiseReductionRadius;
 
     public int SourcePadding { get; init; }
+
+    public bool RecoverDetachedDetails { get; init; }
 
     public int MaximumWidth { get; init; } = 16_384;
 
