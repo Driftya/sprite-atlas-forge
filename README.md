@@ -24,6 +24,15 @@ The project is designed for a practical texture-pipeline workflow: inspect a gen
 - Use the desktop editor or the automation-friendly command-line interface.
 - Recover manually with **Add sprite**, **Source region**, undo/redo, and lossless PNG crops.
 
+## Screenshots
+<p align="center">
+  <img src="docs/screenshots/01.jpg" alt="Screenshot of an empty project" width="340" heigh="auto">
+  <br>
+  <img src="docs/screenshots/02.jpg" alt="Screenshot with a loaded project" width="340" heigh="auto">
+  <br>
+  <img src="docs/screenshots/02.jpg" alt="Screenshot showing shortcuts" width="340" heigh="auto">
+</p>
+
 ## Solution architecture
 
 | Project | Responsibility |
