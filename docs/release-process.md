@@ -38,7 +38,7 @@ The release workflow creates a draft GitHub Release from a version tag.
    .\.artifacts\release-smoke-test\SpriteAtlasForge.exe
    ```
 
-4. Commit and push the release changes. Add the release notes as `docs/release/vX.Y.Z.md`, create an annotated `vX.Y.Z` tag on that commit, and push the tag.
+4. Commit and push the release changes. Add the release notes as `docs/releases/vX.Y.Z.md`, create an annotated `vX.Y.Z` tag on that commit, and push the tag.
 5. Wait for the GitHub **Release** workflow. It verifies the solution, publishes the Windows app, records resolved dependencies, creates a ZIP and SHA-256 file, and attaches them to a draft release.
 6. Download the draft assets, verify the checksum, extract the ZIP on a clean x64 Windows machine, and launch the application.
 7. Edit the draft release as needed and publish it in GitHub.

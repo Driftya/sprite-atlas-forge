@@ -34,7 +34,7 @@ jobs:
             throw "Tag version '$version' does not match ApplicationDisplayVersion '$projectVersion'."
           }
 
-          $notes = "docs/release/$tag.md"
+          $notes = "docs/releases/$tag.md"
           if (-not (Test-Path -LiteralPath $notes)) {
             throw "Release notes '$notes' do not exist."
           }

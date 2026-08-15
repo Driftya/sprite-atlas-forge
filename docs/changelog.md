@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.1
+
+- Added opt-in recovery for faint and detached sprite details in Auto detection, available for a whole sheet or an individual selected sprite.
+- Added the `--recover-detached-details` CLI option and real-image regression coverage for generated ship-module ornaments.
+- Preserved Delete-key editing while hiding the transient Windows accelerator hint.
+- Added Left/Right sprite selection when no resize border is active, while retaining arrow-key border nudging.
+
 ## v1.0.0
 
 - Prepared the Windows MAUI client for its first production release with v1.0.0 assembly and display metadata.
