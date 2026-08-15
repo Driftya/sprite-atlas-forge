@@ -30,7 +30,7 @@ The project is designed for a practical texture-pipeline workflow: inspect a gen
   <br>
   <img src="docs/screenshots/02.jpg" alt="Screenshot with a loaded project" width="340" heigh="auto">
   <br>
-  <img src="docs/screenshots/02.jpg" alt="Screenshot showing shortcuts" width="340" heigh="auto">
+  <img src="docs/screenshots/03.jpg" alt="Screenshot showing shortcuts" width="340" heigh="auto">
 </p>
 
 ## Solution architecture
