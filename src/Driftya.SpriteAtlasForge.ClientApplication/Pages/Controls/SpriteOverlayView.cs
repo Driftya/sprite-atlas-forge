@@ -371,6 +371,12 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
         Invalidate();
     }
 
+    public void ClearSelectedBorder()
+    {
+        _selectedBorder = CanvasResizeHandle.None;
+        Invalidate();
+    }
+
     public bool TryNudgeSelectedBorder(Windows.System.VirtualKey key) => NudgeSelectedBorder(key);
 
     public bool HasSelectedBorder => _selectedBorder != CanvasResizeHandle.None;

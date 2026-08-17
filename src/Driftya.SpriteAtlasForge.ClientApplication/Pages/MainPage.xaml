@@ -133,12 +133,14 @@
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="pageModels:ConnectorCanvasOverlay">
                                         <Grid
-                                            HeightRequest="24"
+                                            HeightRequest="28"
                                             InputTransparent="False"
+                                            SemanticProperties.Description="{Binding Name, StringFormat='Connector {0}'}"
                                             TranslationX="{Binding X}"
                                             TranslationY="{Binding Y}"
-                                            WidthRequest="100">
+                                            WidthRequest="120">
                                             <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Tapped="OnConnectorTapped" />
                                                 <PanGestureRecognizer PanUpdated="OnConnectorPanUpdated" />
                                             </Grid.GestureRecognizers>
                                             <Ellipse
@@ -147,9 +149,31 @@
                                                 Fill="#FF4D6D"
                                                 Stroke="White"
                                                 StrokeThickness="1"
-                                                VerticalOptions="Start"
+                                                VerticalOptions="Center"
                                                 WidthRequest="12" />
-                                            <Label Margin="16,-3,0,0" FontSize="10" Text="{Binding Name}" TextColor="White" />
+                                            <Ellipse
+                                                HeightRequest="16"
+                                                HorizontalOptions="Start"
+                                                IsVisible="{Binding IsSelected}"
+                                                Stroke="#FFD166"
+                                                StrokeThickness="2"
+                                                VerticalOptions="Center"
+                                                WidthRequest="16" />
+                                            <Border
+                                                Margin="18,-8,0,0"
+                                                BackgroundColor="#1F2937"
+                                                IsVisible="{Binding IsSelected}"
+                                                Padding="6,3"
+                                                Stroke="#FFD166"
+                                                StrokeThickness="1"
+                                                WidthRequest="90">
+                                                <Label
+                                                    FontSize="10"
+                                                    HorizontalTextAlignment="Center"
+                                                    LineBreakMode="TailTruncation"
+                                                    Text="{Binding Name}"
+                                                    TextColor="White" />
+                                            </Border>
                                         </Grid>
                                     </DataTemplate>
                                 </BindableLayout.ItemTemplate>

@@ -71,7 +71,7 @@ public partial class MainPage : ContentPage
     {
         await DisplayAlertAsync(
             "Canvas shortcuts",
-            "Arrow keys: nudge the selected border; Left / Right select the previous / next sprite when no border is selected\n" +
+            "Arrow keys: nudge the selected border or connector; Left / Right select the previous / next sprite when no border or connector is selected\n" +
             "Shift + drag: temporarily disable snapping and guides\n" +
             "Right mouse button + drag: pan the canvas\n" +
             "Right mouse button + wheel: zoom around the pointer\n" +
@@ -219,10 +219,13 @@ public partial class MainPage : ContentPage
                      Windows.System.VirtualKey.Right,
                      Windows.System.VirtualKey.Up,
                      Windows.System.VirtualKey.Down,
+                     Windows.System.VirtualKey.Escape,
                  })
         {
             var accelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = key };
-            accelerator.Invoked += OnNudgeAcceleratorInvoked;
+            accelerator.Invoked += key == Windows.System.VirtualKey.Escape
+                ? OnClearSelectionAcceleratorInvoked
+                : OnNudgeAcceleratorInvoked;
             _nudgeAccelerators.Add(accelerator);
             platformView.KeyboardAccelerators.Add(accelerator);
         }
@@ -265,7 +268,22 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        if (OverlayView.TryNudgeSelectedBorder(sender.Key))
+        if (OverlayView.HasSelectedBorder && OverlayView.TryNudgeSelectedBorder(sender.Key))
+        {
+            args.Handled = true;
+            return;
+        }
+
+        var (deltaX, deltaY) = sender.Key switch
+        {
+            Windows.System.VirtualKey.Left => (-1, 0),
+            Windows.System.VirtualKey.Right => (1, 0),
+            Windows.System.VirtualKey.Up => (0, -1),
+            Windows.System.VirtualKey.Down => (0, 1),
+            _ => (0, 0),
+        };
+
+        if ((deltaX != 0 || deltaY != 0) && model.TryNudgeSelectedConnector(deltaX, deltaY))
         {
             args.Handled = true;
             return;
@@ -277,6 +295,24 @@ public partial class MainPage : ContentPage
             args.Handled = model.TrySelectAdjacentSprite(
                 sender.Key == Windows.System.VirtualKey.Left ? -1 : 1);
         }
+    }
+
+    private void OnClearSelectionAcceleratorInvoked(
+        Microsoft.UI.Xaml.Input.KeyboardAccelerator sender,
+        Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
+    {
+        if (_platformView?.XamlRoot is null || IsTextInputFocused())
+        {
+            return;
+        }
+
+        OverlayView.ClearSelectedBorder();
+        if (BindingContext is WorkspacePageModel model)
+        {
+            model.ClearSelection();
+        }
+
+        args.Handled = true;
     }
 
     private bool IsTextInputFocused() =>
@@ -310,11 +346,44 @@ public partial class MainPage : ContentPage
     }
 #endif
 
+    private void OnConnectorTapped(object? sender, EventArgs args)
+    {
+        if (sender is not Grid { BindingContext: ConnectorCanvasOverlay overlay } ||
+            BindingContext is not WorkspacePageModel model ||
+            model.SelectedSprite is null)
+        {
+            return;
+        }
+
+        var matched = model.SelectedSprite.Connectors.FirstOrDefault(connector =>
+            string.Equals(connector.Name, overlay.Name, StringComparison.OrdinalIgnoreCase));
+        if (matched is null)
+        {
+            return;
+        }
+
+        model.SelectedConnector = model.SelectedConnector is not null &&
+            string.Equals(model.SelectedConnector.Name, matched.Name, StringComparison.OrdinalIgnoreCase)
+            ? null
+            : matched;
+    }
+
     private async void OnConnectorPanUpdated(object? sender, PanUpdatedEventArgs args)
     {
-        if (args.StatusType != GestureStatus.Completed ||
-            sender is not PanGestureRecognizer { Parent.BindingContext: ConnectorCanvasOverlay overlay } ||
+        if (sender is not PanGestureRecognizer { Parent.BindingContext: ConnectorCanvasOverlay overlay } ||
             BindingContext is not WorkspacePageModel model)
+        {
+            return;
+        }
+
+        if (args.StatusType == GestureStatus.Started)
+        {
+            model.SelectedConnector = model.SelectedSprite?.Connectors.FirstOrDefault(connector =>
+                string.Equals(connector.Name, overlay.Name, StringComparison.OrdinalIgnoreCase));
+            return;
+        }
+
+        if (args.StatusType != GestureStatus.Completed)
         {
             return;
         }

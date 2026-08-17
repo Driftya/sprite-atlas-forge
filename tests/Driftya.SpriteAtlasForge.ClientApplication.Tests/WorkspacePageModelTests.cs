@@ -115,6 +115,22 @@ public sealed class WorkspacePageModelTests
     }
 
     [Test]
+    public async Task Selected_connector_keyboard_nudging_moves_it_in_bounds_and_tracks_undo()
+    {
+        var original = new AtlasConnector("next", 7, 4);
+        var model = CreateLoadedModel(new StubService(CreateProject([original])), CreateProject([original]));
+        model.SelectedConnector = original;
+
+        await Assert.That(model.TryNudgeSelectedConnector(1, -2)).IsTrue();
+        await Assert.That(model.SelectedConnector).IsEqualTo(new AtlasConnector("next", 8, 2));
+        await Assert.That(model.IsDirty).IsTrue();
+        await Assert.That(model.CanUndo).IsTrue();
+
+        await Assert.That(model.TryNudgeSelectedConnector(999, 999)).IsTrue();
+        await Assert.That(model.SelectedConnector).IsEqualTo(new AtlasConnector("next", 10, 8));
+    }
+
+    [Test]
     public async Task Approving_selected_sprite_updates_export_state_without_reentry()
     {
         var project = CreateProject();

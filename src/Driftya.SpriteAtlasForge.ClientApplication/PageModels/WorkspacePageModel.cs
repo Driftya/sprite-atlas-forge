@@ -621,11 +621,54 @@ public partial class WorkspacePageModel : ObservableObject
         }
 
         var scale = ZoomPercent / 100d;
-        var x = (int)Math.Round((point.X / scale) - SelectedSprite.Frame.X);
-        var y = (int)Math.Round((point.Y / scale) - SelectedSprite.Frame.Y);
+        var x = Math.Clamp((int)Math.Round((point.X / scale) - SelectedSprite.Frame.X), 0, SelectedSprite.SourceRegion.Width);
+        var y = Math.Clamp((int)Math.Round((point.Y / scale) - SelectedSprite.Frame.Y), 0, SelectedSprite.SourceRegion.Height);
         NewConnectorX = x;
         NewConnectorY = y;
         return AddConnectorAtAsync(x, y, cancellationToken);
+    }
+
+    public bool TryNudgeSelectedConnector(int deltaX, int deltaY)
+    {
+        if (CurrentProject is null || SelectedSprite is null || SelectedConnector is null)
+        {
+            return false;
+        }
+
+        var connector = SelectedSprite.Connectors.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, SelectedConnector.Name, StringComparison.OrdinalIgnoreCase));
+        if (connector is null)
+        {
+            return false;
+        }
+
+        var nextX = Math.Clamp(connector.X + deltaX, 0, SelectedSprite.SourceRegion.Width);
+        var nextY = Math.Clamp(connector.Y + deltaY, 0, SelectedSprite.SourceRegion.Height);
+        if (nextX == connector.X && nextY == connector.Y)
+        {
+            return false;
+        }
+
+        _undoHistory.Push(CreateSnapshot());
+        try
+        {
+            var updated = AtlasProjectEditor.UpdateConnector(
+                CurrentProject,
+                SelectedSprite.Id,
+                connector.Name,
+                new AtlasConnector(connector.Name, nextX, nextY));
+            _redoHistory.Clear();
+            SetProject(updated, SelectedSprite.Id, connector.Name);
+            IsDirty = true;
+            Status = "Connector moved.";
+            NotifyHistoryChanged();
+            return true;
+        }
+        catch
+        {
+            _undoHistory.Pop();
+            throw;
+        }
     }
 
     private Task AddConnectorAtAsync(int x, int y, CancellationToken cancellationToken)
@@ -707,8 +750,8 @@ public partial class WorkspacePageModel : ObservableObject
         }
 
         var scale = ZoomPercent / 100d;
-        var x = (int)Math.Round((move.X / scale) - SelectedSprite.Frame.X);
-        var y = (int)Math.Round((move.Y / scale) - SelectedSprite.Frame.Y);
+        var x = Math.Clamp((int)Math.Round((move.X / scale) - SelectedSprite.Frame.X), 0, SelectedSprite.SourceRegion.Width);
+        var y = Math.Clamp((int)Math.Round((move.Y / scale) - SelectedSprite.Frame.Y), 0, SelectedSprite.SourceRegion.Height);
         var selectedId = SelectedSprite.Id;
         return ApplyEditAsync(
             () => AtlasProjectEditor.UpdateConnector(
@@ -727,6 +770,11 @@ public partial class WorkspacePageModel : ObservableObject
     {
         SelectedSprite = Sprites.FirstOrDefault(sprite =>
             string.Equals(sprite.Id, spriteId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public void ClearSelection()
+    {
+        SelectedConnector = null;
     }
 
     public bool TrySelectAdjacentSprite(int direction)
