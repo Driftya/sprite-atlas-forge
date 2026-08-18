@@ -58,6 +58,7 @@ public partial class MainPage : ContentPage
     {
         InitializeComponent();
         BindingContext = model;
+        OverlayView.BorderSelectionChanged += OnBorderSelectionChanged;
         HandlerChanged += OnPlatformHandlerChanged;
         HandlerChanging += OnPlatformHandlerChanging;
     }
@@ -86,11 +87,22 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        OverlayView.ClearSelectedBorder();
+        model.ClearSelection();
+
         if (!string.IsNullOrWhiteSpace(model.NewConnectorName))
         {
             await model.AddConnectorAtCanvasCommand.ExecuteAsync(new CanvasPoint(
                 args.X * model.CanvasZoomScale,
                 args.Y * model.CanvasZoomScale));
+        }
+    }
+
+    private void OnBorderSelectionChanged(object? sender, EventArgs args)
+    {
+        if (BindingContext is WorkspacePageModel model)
+        {
+            model.ClearSelection();
         }
     }
 
@@ -355,6 +367,8 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        OverlayView.ClearSelectedBorder();
+
         var matched = model.SelectedSprite.Connectors.FirstOrDefault(connector =>
             string.Equals(connector.Name, overlay.Name, StringComparison.OrdinalIgnoreCase));
         if (matched is null)
@@ -362,10 +376,14 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        model.SelectedConnector = model.SelectedConnector is not null &&
-            string.Equals(model.SelectedConnector.Name, matched.Name, StringComparison.OrdinalIgnoreCase)
-            ? null
-            : matched;
+        var isSameConnectorAlreadySelected = model.SelectedConnector is not null &&
+            string.Equals(model.SelectedConnector.Name, matched.Name, StringComparison.OrdinalIgnoreCase);
+
+        model.ClearSelection();
+        if (!isSameConnectorAlreadySelected)
+        {
+            model.SelectedConnector = matched;
+        }
     }
 
     private async void OnConnectorPanUpdated(object? sender, PanUpdatedEventArgs args)

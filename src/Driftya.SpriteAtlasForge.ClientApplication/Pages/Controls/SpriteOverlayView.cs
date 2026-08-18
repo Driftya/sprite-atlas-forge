@@ -141,6 +141,8 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
 
     public event EventHandler<CanvasZoomRequestedEventArgs>? CanvasZoomRequested;
 
+    public event EventHandler? BorderSelectionChanged;
+
     public IReadOnlyList<SpriteCanvasOverlay>? Overlays
     {
         get => (IReadOnlyList<SpriteCanvasOverlay>?)GetValue(OverlaysProperty);
@@ -272,9 +274,14 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
             var handle = HitTestHandle(ScaleBounds(CanvasPixelBounds.From(selected), EffectiveScale), _pressPoint);
             if (handle != CanvasResizeHandle.None)
             {
+                var previous = _selectedBorder;
                 _selectedBorder = IsSingleBorder(handle)
                     ? _selectedBorder == handle ? CanvasResizeHandle.None : handle
                     : CanvasResizeHandle.None;
+                if (_selectedBorder != previous)
+                {
+                    BorderSelectionChanged?.Invoke(this, EventArgs.Empty);
+                }
                 _resizedSprite = selected;
                 _resizeHandle = handle;
                 _previewBounds = CanvasPixelBounds.From(selected);
@@ -373,7 +380,13 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
 
     public void ClearSelectedBorder()
     {
+        if (_selectedBorder == CanvasResizeHandle.None)
+        {
+            return;
+        }
+
         _selectedBorder = CanvasResizeHandle.None;
+        BorderSelectionChanged?.Invoke(this, EventArgs.Empty);
         Invalidate();
     }
 

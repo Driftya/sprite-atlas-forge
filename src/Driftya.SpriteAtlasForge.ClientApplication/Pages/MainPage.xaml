@@ -143,27 +143,39 @@
                                                 <TapGestureRecognizer Tapped="OnConnectorTapped" />
                                                 <PanGestureRecognizer PanUpdated="OnConnectorPanUpdated" />
                                             </Grid.GestureRecognizers>
-                                            <Ellipse
-                                                HeightRequest="12"
-                                                HorizontalOptions="Start"
-                                                Fill="#FF4D6D"
-                                                Stroke="White"
-                                                StrokeThickness="1"
-                                                VerticalOptions="Center"
-                                                WidthRequest="12" />
-                                            <Ellipse
+                                            
+                                            <!-- Grouped circles container -->
+                                            <Grid
                                                 HeightRequest="16"
+                                                WidthRequest="16"
                                                 HorizontalOptions="Start"
-                                                IsVisible="{Binding IsSelected}"
-                                                Stroke="#FFD166"
-                                                StrokeThickness="2"
                                                 VerticalOptions="Center"
-                                                WidthRequest="16" />
+                                                Margin="2,0,0,0">
+                                                <Ellipse
+                                                    HeightRequest="8"
+                                                    HorizontalOptions="Center"
+                                                    Fill="#FF4D6D"
+                                                    Stroke="White"
+                                                    StrokeThickness="1.25"
+                                                    VerticalOptions="Center"
+                                                    WidthRequest="8" />
+                                                <Ellipse
+                                                    Fill="Transparent"
+                                                    HeightRequest="12"
+                                                    HorizontalOptions="Center"
+                                                    IsVisible="{Binding IsSelected}"
+                                                    Stroke="#FF4D6D"
+                                                    StrokeThickness="1.5"
+                                                    VerticalOptions="Center"
+                                                    WidthRequest="12" />
+                                            </Grid>
+                                            
+                                            <!-- Tooltip positioned relative to group -->
                                             <Border
-                                                Margin="18,-8,0,0"
+                                                Margin="18,-6,0,0"
                                                 BackgroundColor="#1F2937"
                                                 IsVisible="{Binding IsSelected}"
-                                                Padding="6,3"
+                                                Padding="6,2"
                                                 Stroke="#FFD166"
                                                 StrokeThickness="1"
                                                 WidthRequest="90">
