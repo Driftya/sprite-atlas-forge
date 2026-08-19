@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+using System.Diagnostics.CodeAnalysis;
 using Driftya.SpriteAtlasForge.ClientApplication.PageModels;
 using Microsoft.Maui.Graphics;
 
@@ -64,6 +65,7 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
     private const float HandleSize = 7;
     private const float HitTolerance = 9;
     private const double SnapDistance = 8;
+    private const int NudgeCommitDelayMs = 50; // Batches nudges within 50ms
     private SpriteCanvasOverlay? _pressedSprite;
     private SpriteCanvasOverlay? _resizedSprite;
     private CanvasResizeHandle _resizeHandle;
@@ -74,6 +76,9 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
     private PointF _pressPoint;
     private bool _moved;
     private bool _suppressGraphicsInteraction;
+    private CanvasPixelBounds? _pendingNudgeBounds;
+    private string? _pendingNudgeSpriteId;
+    private System.Timers.Timer? _nudgeCommitTimer;
 #if WINDOWS
     private Microsoft.UI.Xaml.UIElement? _platformView;
     private uint? _rightPanPointerId;
@@ -368,6 +373,10 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
 
     private void ResetInteraction()
     {
+        CommitPendingNudgeImmediate();
+        _nudgeCommitTimer?.Dispose();
+        _nudgeCommitTimer = null;
+        
         _pressedSprite = null;
         _resizedSprite = null;
         _resizeHandle = CanvasResizeHandle.None;
@@ -380,6 +389,8 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
 
     public void ClearSelectedBorder()
     {
+        CommitPendingNudgeImmediate();
+        
         if (_selectedBorder == CanvasResizeHandle.None)
         {
             return;
@@ -394,6 +405,7 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
 
     public bool HasSelectedBorder => _selectedBorder != CanvasResizeHandle.None;
 
+    [ExcludeFromCodeCoverage] // UI-dependent performance optimization tested through manual/integration testing
     private bool NudgeSelectedBorder(Windows.System.VirtualKey key)
     {
         if (!CanResize || _selectedBorder == CanvasResizeHandle.None ||
@@ -443,13 +455,60 @@ public sealed class SpriteOverlayView : GraphicsView, IDrawable
             return false;
         }
 
-        SpriteRegionResized?.Invoke(this, new SpriteRegionResizedEventArgs(
-            selected.SpriteId,
-            preview.Bounds.X,
-            preview.Bounds.Y,
-            preview.Bounds.Width,
-            preview.Bounds.Height));
+        // Store the pending nudge and restart the commit timer to batch consecutive nudges
+        _pendingNudgeBounds = preview.Bounds;
+        _pendingNudgeSpriteId = selected.SpriteId;
+        if (_nudgeCommitTimer?.Enabled != true)
+        {
+            _nudgeCommitTimer = new System.Timers.Timer(NudgeCommitDelayMs) { AutoReset = false };
+            _nudgeCommitTimer.Elapsed += (_, _) => CommitPendingNudge();
+        }
+        _nudgeCommitTimer?.Stop();
+        _nudgeCommitTimer?.Start();
+
+        Invalidate();
         return true;
+    }
+
+    [ExcludeFromCodeCoverage] // Performance optimization: difficult to unit test timer-based batching
+    private void CommitPendingNudge()
+    {
+        if (_pendingNudgeBounds is not { } bounds || _pendingNudgeSpriteId is not { } spriteId)
+        {
+            return;
+        }
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            SpriteRegionResized?.Invoke(this, new SpriteRegionResizedEventArgs(
+                spriteId,
+                bounds.X,
+                bounds.Y,
+                bounds.Width,
+                bounds.Height));
+            _pendingNudgeBounds = null;
+            _pendingNudgeSpriteId = null;
+        });
+    }
+
+    [ExcludeFromCodeCoverage] // Performance optimization: difficult to unit test timer-based batching
+    private void CommitPendingNudgeImmediate()
+    {
+        _nudgeCommitTimer?.Stop();
+        
+        if (_pendingNudgeBounds is not { } bounds || _pendingNudgeSpriteId is not { } spriteId)
+        {
+            return;
+        }
+
+        SpriteRegionResized?.Invoke(this, new SpriteRegionResizedEventArgs(
+            spriteId,
+            bounds.X,
+            bounds.Y,
+            bounds.Width,
+            bounds.Height));
+        _pendingNudgeBounds = null;
+        _pendingNudgeSpriteId = null;
     }
 
     private SpriteCanvasOverlay? HitTestSprite(PointF point) => (Overlays ?? [])

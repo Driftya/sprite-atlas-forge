@@ -2,7 +2,7 @@
 
 ## Distribution
 
-The desktop application is distributed as an unpackaged, self-contained Windows x64 ZIP. Keep the executable and all adjacent files together after extraction; the `.exe` is not a single-file application. Windows 10 version 1809 or newer is required.
+The desktop application is distributed as an unpackaged, framework-dependent Windows x64 ZIP. Windows 10 version 1809 or newer, the .NET 10 Desktop Runtime (x64), and Windows App Runtime 1.8 are required. Keep the executable and all adjacent files together after extraction; the `.exe` is not a single-file application.
 
 To verify a downloaded release archive in PowerShell:
 
@@ -11,7 +11,7 @@ To verify a downloaded release archive in PowerShell:
 Get-Content .\SpriteAtlasForge-X.Y.Z-windows-x64.zip.sha256
 ```
 
-Extract the whole ZIP to a writable folder, then run `SpriteAtlasForge.exe`.
+Install the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) and [Windows App Runtime 1.8](https://learn.microsoft.com/windows/apps/windows-app-sdk/downloads), extract the whole ZIP to a writable folder, then run `SpriteAtlasForge.exe`.
 
 ## Maintainer procedure
 
@@ -24,7 +24,7 @@ The release workflow creates a draft GitHub Release from a version tag.
    .\eng\verify.ps1 -Configuration Release
    ```
 
-3. Smoke-test the self-contained publish used by CI:
+3. Smoke-test the framework-dependent publish used by CI:
 
    ```powershell
    dotnet publish .\src\Driftya.SpriteAtlasForge.ClientApplication\Driftya.SpriteAtlasForge.ClientApplication.csproj `
@@ -33,7 +33,11 @@ The release workflow creates a draft GitHub Release from a version tag.
      --output .\.artifacts\release-smoke-test `
      -p:RuntimeIdentifierOverride=win-x64 `
      -p:WindowsPackageType=None `
-     -p:WindowsAppSDKSelfContained=true
+   -p:SelfContained=false `
+   -p:WindowsAppSDKSelfContained=false `
+   -p:DebugSymbols=false `
+   -p:DebugType=None `
+   -p:CopyDebugSymbolFilesFromPackages=false
 
    .\.artifacts\release-smoke-test\SpriteAtlasForge.exe
    ```

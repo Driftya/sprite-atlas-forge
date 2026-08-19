@@ -54,4 +54,11 @@
     <ProjectReference Include="..\Driftya.SpriteAtlasForge.Infrastructure\Driftya.SpriteAtlasForge.Infrastructure.csproj" />
   </ItemGroup>
 
+  <Target Name="RemovePublishSymbols" AfterTargets="Publish">
+    <ItemGroup>
+      <PublishSymbolFile Include="$(PublishDir)**\*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(PublishSymbolFile)" />
+  </Target>
+
 </Project>

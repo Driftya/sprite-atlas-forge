@@ -50,7 +50,7 @@ jobs:
         shell: pwsh
         run: dotnet restore Driftya.SpriteAtlasForge.slnx --nologo
 
-      - name: Restore Windows runtime pack
+      - name: Restore Windows x64 assets
         shell: pwsh
         run: >-
           dotnet restore src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj
@@ -61,7 +61,7 @@ jobs:
         shell: pwsh
         run: ./eng/verify.ps1 -Configuration Release -NoRestore
 
-      - name: Publish self-contained Windows application
+      - name: Publish framework-dependent Windows application
         shell: pwsh
         run: >-
           dotnet publish src/Driftya.SpriteAtlasForge.ClientApplication/Driftya.SpriteAtlasForge.ClientApplication.csproj
@@ -70,7 +70,11 @@ jobs:
           --output artifacts/windows-x64
           -p:RuntimeIdentifierOverride=win-x64
           -p:WindowsPackageType=None
-          -p:WindowsAppSDKSelfContained=true
+          -p:SelfContained=false
+          -p:WindowsAppSDKSelfContained=false
+          -p:DebugSymbols=false
+          -p:DebugType=None
+          -p:CopyDebugSymbolFilesFromPackages=false
 
       - name: Record resolved dependencies
         shell: pwsh

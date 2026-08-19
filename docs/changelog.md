@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Reduced the Windows release archive by publishing framework-dependent and excluding debug symbols; releases now require the .NET 10 Desktop Runtime and Windows App Runtime 1.8 to be installed separately.
+
 ## v1.0.1
 
 - Added opt-in recovery for faint and detached sprite details in Auto detection, available for a whole sheet or an individual selected sprite.

@@ -55,7 +55,7 @@ Both hosts call the same Application and Infrastructure services in-process. The
 - .NET 10 SDK
 - CLI workflows run wherever the .NET 10 SDK and project dependencies are available.
 - The desktop editor currently supports Windows 10 version 1809 or newer.
-- The desktop editor requires the .NET MAUI Windows workload.
+- The desktop editor requires the .NET 10 Desktop Runtime (x64), Windows App Runtime 1.8, and the .NET MAUI Windows workload for development.
 
 Install the workload when needed:
 
@@ -136,7 +136,7 @@ dotnet run --project src/Driftya.SpriteAtlasForge.ClientApplication -f net10.0-w
 
 ## Releases
 
-The production desktop build is an unpackaged, self-contained Windows x64 application. Publish it locally with:
+The production desktop build is an unpackaged, framework-dependent Windows x64 application. Install the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) and [Windows App Runtime 1.8](https://learn.microsoft.com/windows/apps/windows-app-sdk/downloads) before launching it. Publish it locally with:
 
 ```powershell
 dotnet publish .\src\Driftya.SpriteAtlasForge.ClientApplication\Driftya.SpriteAtlasForge.ClientApplication.csproj `
@@ -145,7 +145,11 @@ dotnet publish .\src\Driftya.SpriteAtlasForge.ClientApplication\Driftya.SpriteAt
   --output .\.artifacts\release-smoke-test `
   -p:RuntimeIdentifierOverride=win-x64 `
   -p:WindowsPackageType=None `
-  -p:WindowsAppSDKSelfContained=true
+  -p:SelfContained=false `
+  -p:WindowsAppSDKSelfContained=false `
+  -p:DebugSymbols=false `
+  -p:DebugType=None `
+  -p:CopyDebugSymbolFilesFromPackages=false
 ```
 
 Distribute the complete publish directory, not the executable by itself. CI builds the same directory on pushes and pull requests. A `vX.Y.Z` tag creates a draft GitHub Release containing a versioned ZIP and SHA-256 checksum after the full verification suite passes.
