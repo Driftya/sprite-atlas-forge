@@ -15,11 +15,11 @@
 
     <ApplicationTitle>Sprite Atlas Forge</ApplicationTitle>
     <ApplicationId>com.driftya.spriteatlasforge</ApplicationId>
-    <ApplicationDisplayVersion>1.0.2</ApplicationDisplayVersion>
-    <ApplicationVersion>3</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.3</ApplicationDisplayVersion>
+    <ApplicationVersion>4</ApplicationVersion>
     <WindowsPackageType>None</WindowsPackageType>
 
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Authors>Driftya</Authors>
     <Product>Sprite Atlas Forge</Product>
     <Description>A Windows desktop editor for detecting, authoring, repacking, and exporting sprite atlases.</Description>
